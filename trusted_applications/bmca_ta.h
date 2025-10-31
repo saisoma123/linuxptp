@@ -41,6 +41,13 @@ struct BmcaDataset {
     struct BmcaPortIdentity receiver;
 } __attribute__((packed));
 
+struct BmcaDefaultDS {
+    uint8_t  priority1;
+    uint8_t  priority2;
+    struct BmcaClockQuality quality;  /* {clockClass, clockAccuracy, offsetScaledLogVariance} */
+    uint8_t  identity[8];             /* ClockIdentity (EUI-64) */
+} __attribute__((packed));
+
 /* Host → TA */
 struct BmcaInput {
     /* Foreign datasets (by value) */
