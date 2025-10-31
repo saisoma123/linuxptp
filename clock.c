@@ -47,6 +47,7 @@
 #include "tz.h"
 #include "uds.h"
 #include "util.h"
+#include "trusted_applications/bmca_ta.h"
 
 #define N_CLOCK_PFD (N_POLLFD + 1) /* one extra per port, for the fault timer */
 
@@ -2266,6 +2267,141 @@ void clock_update_time_properties(struct clock *c, struct timePropertiesDS tds)
 	c->tds = tds;
 }
 
+static inline void copy_dataset(const struct dataset *src, struct BmcaDataset *dst)
+{
+    memset(dst, 0, sizeof(*dst)); 
+    if (!src)
+        return;
+
+    memcpy(dst->identity, &src->identity, 8);
+    dst->priority1 = src->priority1;
+    dst->quality.clockClass = src->quality.clockClass;
+    dst->quality.clockAccuracy = src->quality.clockAccuracy;
+    dst->quality.offsetScaledLogVariance = src->quality.offsetScaledLogVariance;
+    dst->priority2 = src->priority2;
+    dst->stepsRemoved = src->stepsRemoved;
+
+    memcpy(dst->sender.clockIdentity,   &src->sender.clockIdentity,   8);
+    dst->sender.portNumber = src->sender.portNumber;
+    memcpy(dst->receiver.clockIdentity, &src->receiver.clockIdentity, 8);
+    dst->receiver.portNumber = src->receiver.portNumber;
+}
+
+static int tee_bmca_set_default_ds(struct clock *c)
+{
+    TEEC_Context ctx;
+    TEEC_Session sess;
+    TEEC_Operation op;
+    TEEC_Result res;
+    TEEC_UUID uuid = TA_BMCA_UUID;
+    uint32_t err_origin;
+
+    struct BmcaDefaultDS d;
+
+    /* Build payload from REE DefaultDS */
+    d.priority1 = c->dds.priority1;
+    d.priority2 = c->dds.priority2;
+    d.quality.clockClass                 = c->dds.clockQuality.clockClass;
+    d.quality.clockAccuracy              = c->dds.clockQuality.clockAccuracy;
+    d.quality.offsetScaledLogVariance    = c->dds.clockQuality.offsetScaledLogVariance;
+    memcpy(d.identity, &c->dds.clockIdentity, sizeof(d.identity)); /* 8 bytes */
+
+    res = TEEC_InitializeContext(NULL, &ctx);
+    if (res != TEEC_SUCCESS) {
+        fprintf(stderr, "TEE: InitializeContext failed 0x%x\n", res);
+        return 0;
+    }
+
+    res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+    if (res != TEEC_SUCCESS) {
+        fprintf(stderr, "TEE: OpenSession failed 0x%x origin 0x%x\n", res, err_origin);
+        TEEC_FinalizeContext(&ctx);
+        return 0;
+    }
+
+    memset(&op, 0, sizeof(op));
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT, TEEC_NONE, TEEC_NONE, TEEC_NONE);
+    op.params[0].tmpref.buffer = &d;
+    op.params[0].tmpref.size   = sizeof(d);
+
+    res = TEEC_InvokeCommand(&sess, TA_BMCA_CMD_SET_DEFAULT_DS, &op, &err_origin);
+
+    TEEC_CloseSession(&sess);
+    TEEC_FinalizeContext(&ctx);
+
+    if (res != TEEC_SUCCESS) {
+        fprintf(stderr, "TEE: SET_DEFAULT_DS failed 0x%x origin 0x%x\n", res, err_origin);
+        return 0;
+    }
+    return 1;
+}
+
+static int tee_bmc_state_decision(struct clock *c, struct port *p, enum port_state *ps_out)
+{
+	TEEC_Context ctx;
+	TEEC_Session sess;
+	TEEC_Result res;
+	TEEC_Operation op;
+	uint32_t err_origin;
+	TEEC_UUID uuid = TA_BMCA_UUID;
+
+	struct BmcaInput in;
+	struct BmcaOutput out;
+
+	/* ---- Build input (inline mapping) ---- */
+	memset(&in, 0, sizeof(in));
+
+	const struct dataset *cb = clock_best_foreign(c);
+	const struct dataset *pb = port_best_foreign(p);
+	const struct port    *best_port = clock_best_port(c);
+
+	copy_dataset(cb, &in.clock_best);
+	copy_dataset(pb, &in.port_best);
+
+	in.has_clock_best = (cb != NULL);
+	in.has_port_best  = (pb != NULL);
+
+	in.current_port_state      = (uint8_t)port_state(p);
+	in.bmca_mode               = (uint8_t)port_bmca(p);
+	in.clock_best_is_this_port = (best_port == p);
+	in.clock_class             = (uint8_t)clock_class(c);
+	
+	res = TEEC_InitializeContext(NULL, &ctx);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr, "TEE: InitializeContext failed 0x%x\n", res);
+		return 0;
+	}
+
+	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr, "TEE: OpenSession failed 0x%x origin 0x%x\n", res, err_origin);
+		TEEC_FinalizeContext(&ctx);
+		return 0;
+	}
+
+	memset(&out, 0, sizeof(out));
+	memset(&op, 0, sizeof(op));
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+	                                 TEEC_MEMREF_TEMP_OUTPUT,
+	                                 TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = &in;
+	op.params[0].tmpref.size   = sizeof(in);
+	op.params[1].tmpref.buffer = &out;
+	op.params[1].tmpref.size   = sizeof(out);
+
+	res = TEEC_InvokeCommand(&sess, TA_BMCA_CMD_DECIDE, &op, &err_origin);
+	TEEC_CloseSession(&sess);
+	TEEC_FinalizeContext(&ctx);
+
+	if (res != TEEC_SUCCESS) {
+		fprintf(stderr, "TEE: DECIDE failed 0x%x origin 0x%x\n", res, err_origin);
+		return 0;
+	}
+
+	*ps_out = (enum port_state)out.decided_state;
+	return 1;
+}
+
 static void handle_state_decision_event(struct clock *c)
 {
 	struct foreign_clock *best = NULL, *fc;
@@ -2313,10 +2449,15 @@ static void handle_state_decision_event(struct clock *c)
 	c->best = best;
 	c->best_id = best_id;
 
+	if (!tee_bmca_set_default_ds(c))
+    	fprintf(stderr, "TEE provisioning of DefaultDS failed, continuing in REE mode\n");
+
 	LIST_FOREACH(piter, &c->ports, list) {
 		enum port_state ps;
 		enum fsm_event event;
-		ps = bmc_state_decision(c, piter, c->dscmp);
+		if (!tee_bmc_state_decision(c, piter, &ps)) {
+			ps = bmc_state_decision(c, piter, c->dscmp);
+		}
 		switch (ps) {
 		case PS_LISTENING:
 			event = EV_NONE;
