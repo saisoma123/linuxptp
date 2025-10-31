@@ -48,6 +48,7 @@
 #include "uds.h"
 #include "util.h"
 #include "trusted_applications/bmca_ta.h"
+#include <tee_client_api.h>
 
 #define N_CLOCK_PFD (N_POLLFD + 1) /* one extra per port, for the fault timer */
 
