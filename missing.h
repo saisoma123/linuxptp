@@ -67,14 +67,7 @@
 #define SOF_TIMESTAMPING_BIND_PHC (1 << 15)
 #endif
 
-/* Provide fallback struct only if kernel headers truly lack it */
-#if !defined(__SO_TIMESTAMPING_DEFINED)
-#define __SO_TIMESTAMPING_DEFINED
-struct so_timestamping {
-    int flags;
-    int bind_phc;
-};
-#endif
+
 
 #ifndef HAVE_IF_TEAM
 #define TEAM_GENL_NAME		"team"
