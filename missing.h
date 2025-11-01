@@ -55,26 +55,24 @@
 #define ETH_P_PRP   0x88FB   /* IEC 62439-3 PRP/HSRv0  */
 #endif
 
-#ifndef HAVE_ONESTEP_SYNC
-enum _missing_hwtstamp_tx_types {
-	HWTSTAMP_TX_ONESTEP_SYNC = 2,
-};
+#ifndef HWTSTAMP_TX_ONESTEP_SYNC
+#define HWTSTAMP_TX_ONESTEP_SYNC 2
 #endif
 
-#ifndef HAVE_ONESTEP_P2P
-enum {
-	HWTSTAMP_TX_ONESTEP_P2P = 3,
-};
+#ifndef HWTSTAMP_TX_ONESTEP_P2P
+#define HWTSTAMP_TX_ONESTEP_P2P 3
 #endif
 
-#ifndef HAVE_VCLOCKS
-enum {
-	SOF_TIMESTAMPING_BIND_PHC = (1 << 15),
-};
+#ifndef SOF_TIMESTAMPING_BIND_PHC
+#define SOF_TIMESTAMPING_BIND_PHC (1 << 15)
+#endif
 
+/* Provide fallback struct only if kernel headers truly lack it */
+#if !defined(__SO_TIMESTAMPING_DEFINED)
+#define __SO_TIMESTAMPING_DEFINED
 struct so_timestamping {
-	int flags;
-	int bind_phc;
+    int flags;
+    int bind_phc;
 };
 #endif
 
