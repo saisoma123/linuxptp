@@ -50,17 +50,20 @@ endif
 
 ifneq (,$(findstring -DHAVE_NETTLE, $(incdefs)))
 LDLIBS += -lnettle
-SECURITY += sad_nettle.o
+SECURITY = sad_nettle.o
 else ifneq (,$(findstring -DHAVE_GNUTLS, $(incdefs)))
 LDLIBS += -lgnutls
-SECURITY += sad_gnutls.o
+SECURITY = sad_gnutls.o
 else ifneq (,$(findstring -DHAVE_GNUPG, $(incdefs)))
 LDLIBS += -lgcrypt
-SECURITY += sad_gnupg.o
+SECURITY = sad_gnupg.o
 else ifneq (,$(findstring -DHAVE_OPENSSL, $(incdefs)))
 LDLIBS += -lcrypto
-SECURITY += sad_openssl.o
+SECURITY = sad_openssl.o
+else
+SECURITY = sad.o
 endif
+
 
 ifneq (,$(findstring -DHAVE_LIBCAP,$(incdefs)))
 LDLIBS += -lcap
