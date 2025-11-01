@@ -48,21 +48,7 @@ ifeq (,$(findstring -DUSE_OPENSSL, $(EXTRA_CFLAGS)))
 incdefs := $(filter-out -DHAVE_OPENSSL, $(incdefs))
 endif
 
-ifneq (,$(findstring -DHAVE_NETTLE, $(incdefs)))
-LDLIBS += -lnettle
-SECURITY = sad_nettle.o
-else ifneq (,$(findstring -DHAVE_GNUTLS, $(incdefs)))
-LDLIBS += -lgnutls
-SECURITY = sad_gnutls.o
-else ifneq (,$(findstring -DHAVE_GNUPG, $(incdefs)))
-LDLIBS += -lgcrypt
-SECURITY = sad_gnupg.o
-else ifneq (,$(findstring -DHAVE_OPENSSL, $(incdefs)))
-LDLIBS += -lcrypto
-SECURITY = sad_openssl.o
-else
-SECURITY = sad.o
-endif
+SECURITY := sad.o
 
 
 ifneq (,$(findstring -DHAVE_LIBCAP,$(incdefs)))
