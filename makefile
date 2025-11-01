@@ -43,9 +43,6 @@ srcdir	:= $(dir $(lastword $(MAKEFILE_LIST)))
 incdefs := $(shell CC="$(CC)" $(srcdir)/incdefs.sh)
 version := $(shell $(srcdir)/version.sh $(srcdir))
 VPATH	= $(srcdir)
-TA_DIR  := $(srcdir)/trusted_applications
-CFLAGS += -I$(TA_DIR)
-SECURITY += $(TA_DIR)/trusted_bmca.o
 
 ifeq (,$(findstring -DUSE_OPENSSL, $(EXTRA_CFLAGS)))
 incdefs := $(filter-out -DHAVE_OPENSSL, $(incdefs))
