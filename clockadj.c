@@ -61,7 +61,7 @@ int clockadj_set_freq(clockid_t clkid, double freq)
 	}
 
 	tx.modes |= ADJ_FREQUENCY;
-	tx.freq = (long) (freq * 65.536);
+	tx.freq = (long) ((freq + 50) * 65.536); // this adds a progressive skew of 0.05 microseconds per second
 	if (clock_adjtime(clkid, &tx) < 0) {
 		pr_err("failed to adjust the clock: %m");
 		return -1;
