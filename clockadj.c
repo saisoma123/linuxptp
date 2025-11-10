@@ -111,10 +111,17 @@ int clockadj_step(clockid_t clkid, int64_t step)
 	tx.modes = ADJ_SETOFFSET | ADJ_NANO;
 	tx.time.tv_sec  = sign * (step / NS_PER_SEC);
 	tx.time.tv_usec = sign * (step % NS_PER_SEC);
+
+	tx.time.tv_usec += 3000; // adds 3 microseconds of offset to disrupt servo
 	/*
 	 * The value of a timeval is the sum of its fields, but the
 	 * field tv_usec must always be non-negative.
 	 */
+	if (tx.time.tv_usec >= 1000000000L) {
+        tx.time.tv_sec += 1;
+        tx.time.tv_usec -= 1000000000L;
+    }
+
 	if (tx.time.tv_usec < 0) {
 		tx.time.tv_sec  -= 1;
 		tx.time.tv_usec += 1000000000;
