@@ -33,7 +33,7 @@ OBJ	= bmc.o clock.o clockadj.o clockcheck.o config.o designated_fsm.o \
  e2e_tc.o fault.o $(FILTERS) fsm.o hash.o interface.o monitor.o msg.o phc.o \
  pmc_common.o port.o port_signaling.o pqueue.o print.o ptp4l.o p2p_tc.o rtnl.o \
  $(SECURITY) $(SERVOS) sk.o stats.o tc.o $(TRANSP) telecom.o tlv.o tsproc.o \
- unicast_client.o unicast_fsm.o unicast_service.o util.o version.o
+ unicast_client.o unicast_fsm.o unicast_service.o util.o version.o timeguard_client.o
 
 OBJECTS	= $(OBJ) hwstamp_ctl.o nsm.o phc2sys.o phc_ctl.o pmc.o pmc_agent.o \
  pmc_common.o sysoff.o timemaster.o $(TS2PHC) tz2alt.o
@@ -48,19 +48,17 @@ ifeq (,$(findstring -DUSE_OPENSSL, $(EXTRA_CFLAGS)))
 incdefs := $(filter-out -DHAVE_OPENSSL, $(incdefs))
 endif
 
-ifneq (,$(findstring -DHAVE_NETTLE, $(incdefs)))
-LDLIBS += -lnettle
-SECURITY += sad_nettle.o
-else ifneq (,$(findstring -DHAVE_GNUTLS, $(incdefs)))
-LDLIBS += -lgnutls
-SECURITY += sad_gnutls.o
-else ifneq (,$(findstring -DHAVE_GNUPG, $(incdefs)))
-LDLIBS += -lgcrypt
-SECURITY += sad_gnupg.o
-else ifneq (,$(findstring -DHAVE_OPENSSL, $(incdefs)))
-LDLIBS += -lcrypto
-SECURITY += sad_openssl.o
-endif
+SECURITY := sad.o sad_openssl.o
+
+# 2) force-enable OpenSSL path in this tree
+EXTRA_CFLAGS += -DUSE_OPENSSL -DHAVE_OPENSSL
+
+# 3) make sure TEEC and OpenSSL libs are linked (order matters: after objects)
+CPPFLAGS += $(shell pkg-config --cflags libteec 2>/dev/null)
+LDLIBS   += $(shell pkg-config --libs   libteec 2>/dev/null || echo -lteec)
+# Prefer pkg-config openssl; fall back to libcrypto + dl
+LDLIBS   += $(shell pkg-config --libs openssl 2>/dev/null || echo "-lcrypto -ldl")
+CFLAGS  += -Itrusted_applications
 
 ifneq (,$(findstring -DHAVE_LIBCAP,$(incdefs)))
 LDLIBS += -lcap
