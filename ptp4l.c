@@ -36,6 +36,20 @@
 #include "uds.h"
 #include "util.h"
 #include "version.h"
+#include "timeguard_client.h"
+
+
+static void timeguard_init(void)
+{
+	uint8_t dev_secret[32] = {0}; 
+	// For bring-up you can leave zeros; TA currently accepts anything.
+	if (!tg_register(dev_secret)) {
+		pr_err("timeguard: register failed; continuing without watchdog\n");
+	} else {
+		pr_info("timeguard: registered, proxy_id=0x%016llx\n",
+		        (unsigned long long)tg_proxy_id());
+	}
+}
 
 static void usage(char *progname)
 {
@@ -253,7 +267,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "failed to create a clock\n");
 		goto out;
 	}
-
+	timeguard_init();
 	err = 0;
 
 	while (is_running()) {
