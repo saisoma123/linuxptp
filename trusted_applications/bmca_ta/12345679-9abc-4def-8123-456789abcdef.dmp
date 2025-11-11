@@ -1,6 +1,6 @@
 
-12345678-9abc-4def-8123-456789abcdef.elf:     file format elf32-littlearm
-12345678-9abc-4def-8123-456789abcdef.elf
+12345679-9abc-4def-8123-456789abcdef.elf:     file format elf32-littlearm
+12345679-9abc-4def-8123-456789abcdef.elf
 architecture: armv7, flags 0x00000150:
 HAS_SYMS, DYNAMIC, D_PAGED
 start address 0x0000035c
@@ -74,19 +74,19 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  19 .debug_macro  00033d34  00000000  00000000  00051226  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 20 .debug_line   00013a29  00000000  00000000  00084f5a  2**0
+ 20 .debug_line   00013a23  00000000  00000000  00084f5a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_str    0001e727  00000000  00000000  00098983  2**0
+ 21 .debug_str    0001e727  00000000  00000000  0009897d  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .comment      00000012  00000000  00000000  000b70aa  2**0
+ 22 .comment      00000012  00000000  00000000  000b70a4  2**0
                   CONTENTS, READONLY
- 23 .ARM.attributes 00000033  00000000  00000000  000b70bc  2**0
+ 23 .ARM.attributes 00000033  00000000  00000000  000b70b6  2**0
                   CONTENTS, READONLY
- 24 .debug_frame  000036b0  00000000  00000000  000b70f0  2**2
+ 24 .debug_frame  000036b0  00000000  00000000  000b70ec  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  25 .rel.dyn      00000108  000100f0  000100f0  000110f0  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
- 26 .debug_line_str 00000125  00000000  00000000  000ba7a0  2**0
+ 26 .debug_line_str 00000125  00000000  00000000  000ba79c  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 SYMBOL TABLE:
 00000000 l    d  .text	00000000 .text
@@ -1009,27 +1009,27 @@ TA_InvokeCommandEntryPoint():
      158:	2903      	cmp	r1, #3
      15a:	f000 80ad 	beq.w	2b8 <TA_InvokeCommandEntryPoint+0x17e>
      15e:	2901      	cmp	r1, #1
-     160:	f040 80b1 	bne.w	2c6 <TA_InvokeCommandEntryPoint+0x18c>
+     160:	f040 80b0 	bne.w	2c4 <TA_InvokeCommandEntryPoint+0x18a>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:279
      164:	2a65      	cmp	r2, #101	@ 0x65
-     166:	f040 80b2 	bne.w	2ce <TA_InvokeCommandEntryPoint+0x194>
+     166:	f040 80b1 	bne.w	2cc <TA_InvokeCommandEntryPoint+0x192>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:282
      16a:	6825      	ldr	r5, [r4, #0]
      16c:	2d00      	cmp	r5, #0
-     16e:	f000 80ae 	beq.w	2ce <TA_InvokeCommandEntryPoint+0x194>
+     16e:	f000 80ad 	beq.w	2cc <TA_InvokeCommandEntryPoint+0x192>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:282 (discriminator 1)
      172:	f8d4 9008 	ldr.w	r9, [r4, #8]
      176:	f1b9 0f00 	cmp.w	r9, #0
-     17a:	f000 80a8 	beq.w	2ce <TA_InvokeCommandEntryPoint+0x194>
+     17a:	f000 80a7 	beq.w	2cc <TA_InvokeCommandEntryPoint+0x192>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:285
      17e:	6863      	ldr	r3, [r4, #4]
      180:	2b4e      	cmp	r3, #78	@ 0x4e
-     182:	f240 80a2 	bls.w	2ca <TA_InvokeCommandEntryPoint+0x190>
+     182:	f240 80a1 	bls.w	2c8 <TA_InvokeCommandEntryPoint+0x18e>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:286
      186:	68e2      	ldr	r2, [r4, #12]
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:285 (discriminator 1)
      188:	2a00      	cmp	r2, #0
-     18a:	f000 809e 	beq.w	2ca <TA_InvokeCommandEntryPoint+0x190>
+     18a:	f000 809d 	beq.w	2c8 <TA_InvokeCommandEntryPoint+0x18e>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:293
      18e:	2100      	movs	r1, #0
      190:	4648      	mov	r0, r9
@@ -1149,7 +1149,7 @@ TA_InvokeCommandEntryPoint():
      250:	9b0b      	ldr	r3, [sp, #44]	@ 0x2c
      252:	405a      	eors	r2, r3
      254:	f04f 0300 	mov.w	r3, #0
-     258:	d03b      	beq.n	2d2 <TA_InvokeCommandEntryPoint+0x198>
+     258:	d03a      	beq.n	2d0 <TA_InvokeCommandEntryPoint+0x196>
      25a:	f000 f881 	bl	360 <__stack_chk_fail>
 bmca_decide():
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:216
@@ -1181,14 +1181,14 @@ bmca_decide():
 TA_InvokeCommandEntryPoint():
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:308
      288:	2a05      	cmp	r2, #5
-     28a:	d120      	bne.n	2ce <TA_InvokeCommandEntryPoint+0x194>
+     28a:	d11f      	bne.n	2cc <TA_InvokeCommandEntryPoint+0x192>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:311
      28c:	6825      	ldr	r5, [r4, #0]
-     28e:	b1e5      	cbz	r5, 2ca <TA_InvokeCommandEntryPoint+0x190>
+     28e:	b1dd      	cbz	r5, 2c8 <TA_InvokeCommandEntryPoint+0x18e>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:311 (discriminator 1)
      290:	6863      	ldr	r3, [r4, #4]
      292:	2b0d      	cmp	r3, #13
-     294:	d919      	bls.n	2ca <TA_InvokeCommandEntryPoint+0x190>
+     294:	d918      	bls.n	2c8 <TA_InvokeCommandEntryPoint+0x18e>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:319
      296:	4c17      	ldr	r4, [pc, #92]	@ (2f4 <TA_InvokeCommandEntryPoint+0x1ba>)
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:321
@@ -1216,27 +1216,25 @@ TA_InvokeCommandEntryPoint():
      2b6:	e7c5      	b.n	244 <TA_InvokeCommandEntryPoint+0x10a>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:330
      2b8:	2a02      	cmp	r2, #2
-     2ba:	d108      	bne.n	2ce <TA_InvokeCommandEntryPoint+0x194>
+     2ba:	d107      	bne.n	2cc <TA_InvokeCommandEntryPoint+0x192>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:332
      2bc:	f64b 23aa 	movw	r3, #47786	@ 0xbaaa
+     2c0:	6023      	str	r3, [r4, #0]
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:333
-     2c0:	2001      	movs	r0, #1
-/root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:332
-     2c2:	6023      	str	r3, [r4, #0]
-/root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:333
-     2c4:	e7bf      	b.n	246 <TA_InvokeCommandEntryPoint+0x10c>
+     2c2:	e7bf      	b.n	244 <TA_InvokeCommandEntryPoint+0x10a>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:271
-     2c6:	4804      	ldr	r0, [pc, #16]	@ (2d8 <TA_InvokeCommandEntryPoint+0x19e>)
-     2c8:	e7bd      	b.n	246 <TA_InvokeCommandEntryPoint+0x10c>
+     2c4:	4804      	ldr	r0, [pc, #16]	@ (2d8 <TA_InvokeCommandEntryPoint+0x19e>)
+     2c6:	e7be      	b.n	246 <TA_InvokeCommandEntryPoint+0x10c>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:287
-     2ca:	4804      	ldr	r0, [pc, #16]	@ (2dc <TA_InvokeCommandEntryPoint+0x1a2>)
-     2cc:	e7bb      	b.n	246 <TA_InvokeCommandEntryPoint+0x10c>
+     2c8:	4804      	ldr	r0, [pc, #16]	@ (2dc <TA_InvokeCommandEntryPoint+0x1a2>)
+     2ca:	e7bc      	b.n	246 <TA_InvokeCommandEntryPoint+0x10c>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:280
-     2ce:	4804      	ldr	r0, [pc, #16]	@ (2e0 <TA_InvokeCommandEntryPoint+0x1a6>)
-     2d0:	e7b9      	b.n	246 <TA_InvokeCommandEntryPoint+0x10c>
+     2cc:	4804      	ldr	r0, [pc, #16]	@ (2e0 <TA_InvokeCommandEntryPoint+0x1a6>)
+     2ce:	e7ba      	b.n	246 <TA_InvokeCommandEntryPoint+0x10c>
 /root/linuxptp/trusted_applications/bmca_ta/trusted_bmca.c:339
-     2d2:	b00d      	add	sp, #52	@ 0x34
-     2d4:	e8bd 8ff0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+     2d0:	b00d      	add	sp, #52	@ 0x34
+     2d2:	e8bd 8ff0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, fp, pc}
+     2d6:	bf00      	nop
      2d8:	ffff000a 	.word	0xffff000a
      2dc:	ffff0010 	.word	0xffff0010
      2e0:	ffff0006 	.word	0xffff0006

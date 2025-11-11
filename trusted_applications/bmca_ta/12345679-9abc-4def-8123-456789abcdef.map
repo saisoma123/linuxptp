@@ -2508,7 +2508,7 @@ LOAD /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libdl.a
 END GROUP
 LOAD /usr/lib/gcc/arm-poky-linux-gnueabi/14.3.0/../../../arm-poky-linux-gnueabi/14.3.0/libgcc.a
 LOAD /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a
-OUTPUT(12345678-9abc-4def-8123-456789abcdef.elf elf32-littlearm)
+OUTPUT(12345679-9abc-4def-8123-456789abcdef.elf elf32-littlearm)
 LOAD linker stubs
 
 .debug_info     0x00000000    0x23047
@@ -2930,47 +2930,47 @@ LOAD linker stubs
  .debug_macro   0x00033088      0x16e /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_objects.o)
  .debug_macro   0x000331f6      0xb3e /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_objects.o)
 
-.debug_line     0x00000000    0x13a29
- .debug_line    0x00000000      0x5f6 ./trusted_bmca.o
- .debug_line    0x000005f6      0x350 ./user_ta_header.o
- .debug_line    0x00000946       0x49 ./ta_entry_a32.o
- .debug_line    0x0000098f      0x1d1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(stack_check.o)
- .debug_line    0x00000b60      0x20f /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memcpy.o)
- .debug_line    0x00000d6f      0x3d7 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(trace.o)
- .debug_line    0x00001146       0x8c /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(aeabi_unwind.o)
- .debug_line    0x000011d2      0xbc1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(snprintk.o)
- .debug_line    0x00001d93      0x152 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memchr.o)
- .debug_line    0x00001ee5      0x13c /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(strlen.o)
- .debug_line    0x00002021       0x62 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_ldivmod_a32.o)
- .debug_line    0x00002083      0x2b1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_ldivmod.o)
- .debug_line    0x00002334      0x317 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(trace_ext.o)
- .debug_line    0x0000264b     0x1084 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api.o)
- .debug_line    0x000036cf      0x3bb /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_panic.o)
- .debug_line    0x00003a8a      0x472 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_system_pta.o)
- .debug_line    0x00003efc      0xa8a /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(user_ta_entry.o)
- .debug_line    0x00004986      0x429 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(utee_syscalls_a32.o)
- .debug_line    0x00004daf      0x263 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(abort.o)
- .debug_line    0x00005012     0x1cc0 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_arith_mpi.o)
- .debug_line    0x00006cd2      0xe1f /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_property.o)
- .debug_line    0x00007af1      0x558 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tcb.o)
- .debug_line    0x00008049      0x25b /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(assert.o)
- .debug_line    0x000082a4     0x2c3f /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(bignum.o)
- .debug_line    0x0000aee3     0x16c6 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(bignum_core.o)
- .debug_line    0x0000c5a9      0x8a4 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(constant_time.o)
- .debug_line    0x0000ce4d      0x3f5 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(platform_util.o)
- .debug_line    0x0000d242     0x13de /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(bget_malloc.o)
- .debug_line    0x0000e620      0x16e /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(snprintf.o)
- .debug_line    0x0000e78e      0x183 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memmove.o)
- .debug_line    0x0000e911      0x13e /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memset.o)
- .debug_line    0x0000ea4f      0x14b /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(strcmp.o)
- .debug_line    0x0000eb9a      0x2d6 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_divmod.o)
- .debug_line    0x0000ee70      0x1cb /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(strlcpy.o)
- .debug_line    0x0000f03b      0x35d /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(mempool.o)
- .debug_line    0x0000f398      0x1a6 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(consttime_memcmp.o)
- .debug_line    0x0000f53e      0x3c1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(base64.o)
- .debug_line    0x0000f8ff       0x58 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_divmod_a32.o)
- .debug_line    0x0000f957     0x2cb2 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_operations.o)
- .debug_line    0x00012609     0x1420 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_objects.o)
+.debug_line     0x00000000    0x13a23
+ .debug_line    0x00000000      0x5f0 ./trusted_bmca.o
+ .debug_line    0x000005f0      0x350 ./user_ta_header.o
+ .debug_line    0x00000940       0x49 ./ta_entry_a32.o
+ .debug_line    0x00000989      0x1d1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(stack_check.o)
+ .debug_line    0x00000b5a      0x20f /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memcpy.o)
+ .debug_line    0x00000d69      0x3d7 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(trace.o)
+ .debug_line    0x00001140       0x8c /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(aeabi_unwind.o)
+ .debug_line    0x000011cc      0xbc1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(snprintk.o)
+ .debug_line    0x00001d8d      0x152 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memchr.o)
+ .debug_line    0x00001edf      0x13c /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(strlen.o)
+ .debug_line    0x0000201b       0x62 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_ldivmod_a32.o)
+ .debug_line    0x0000207d      0x2b1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_ldivmod.o)
+ .debug_line    0x0000232e      0x317 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(trace_ext.o)
+ .debug_line    0x00002645     0x1084 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api.o)
+ .debug_line    0x000036c9      0x3bb /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_panic.o)
+ .debug_line    0x00003a84      0x472 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_system_pta.o)
+ .debug_line    0x00003ef6      0xa8a /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(user_ta_entry.o)
+ .debug_line    0x00004980      0x429 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(utee_syscalls_a32.o)
+ .debug_line    0x00004da9      0x263 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(abort.o)
+ .debug_line    0x0000500c     0x1cc0 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_arith_mpi.o)
+ .debug_line    0x00006ccc      0xe1f /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_property.o)
+ .debug_line    0x00007aeb      0x558 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tcb.o)
+ .debug_line    0x00008043      0x25b /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(assert.o)
+ .debug_line    0x0000829e     0x2c3f /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(bignum.o)
+ .debug_line    0x0000aedd     0x16c6 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(bignum_core.o)
+ .debug_line    0x0000c5a3      0x8a4 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(constant_time.o)
+ .debug_line    0x0000ce47      0x3f5 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libmbedtls.a(platform_util.o)
+ .debug_line    0x0000d23c     0x13de /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(bget_malloc.o)
+ .debug_line    0x0000e61a      0x16e /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(snprintf.o)
+ .debug_line    0x0000e788      0x183 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memmove.o)
+ .debug_line    0x0000e90b      0x13e /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(memset.o)
+ .debug_line    0x0000ea49      0x14b /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(strcmp.o)
+ .debug_line    0x0000eb94      0x2d6 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_divmod.o)
+ .debug_line    0x0000ee6a      0x1cb /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(strlcpy.o)
+ .debug_line    0x0000f035      0x35d /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(mempool.o)
+ .debug_line    0x0000f392      0x1a6 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(consttime_memcmp.o)
+ .debug_line    0x0000f538      0x3c1 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(base64.o)
+ .debug_line    0x0000f8f9       0x58 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutils.a(arm32_aeabi_divmod_a32.o)
+ .debug_line    0x0000f951     0x2cb2 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_operations.o)
+ .debug_line    0x00012603     0x1420 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/lib/libutee.a(tee_api_objects.o)
 
 .debug_str      0x00000000    0x1e727
  .debug_str     0x00000000    0x1e727 ./trusted_bmca.o
