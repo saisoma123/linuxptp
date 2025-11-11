@@ -1,5 +1,6 @@
 #include <tee_client_api.h>
-#include "tg_proto.h"
+#include "timeguard_client.h"
+#include "trusted_applications/register_ta.h"
 
 static TEEC_Context g_ctx;
 static TEEC_Session g_sess;

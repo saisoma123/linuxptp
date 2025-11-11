@@ -1,6 +1,6 @@
 #include <tee_internal_api.h>
 #include <tee_internal_api_extensions.h>
-#include "tg_proto.h"
+#include "../register_ta.h"
 
 typedef struct {
 	uint64_t proxy_id;

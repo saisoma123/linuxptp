@@ -1,5 +1,7 @@
-local-dir := $(call my-dir)
-local-ta-uuid := 7f3b8d40-6c6a-4f2b-914c-39389d1244a1
-local-ta-name := register_ta
+# TA sources
+srcs-y += register_ta.c
 
-include $(BUILD_OPTEE_MK)
+# Header is in the parent folder: linuxptp/trusted_applications/register_ta.h
+global-incdirs-y += ..
+# (optional) warnings
+cflags-y += -Wall -Wextra
