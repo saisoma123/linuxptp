@@ -59,6 +59,11 @@ LDLIBS   += $(shell pkg-config --libs   libteec 2>/dev/null || echo -lteec)
 # Prefer pkg-config openssl; fall back to libcrypto + dl
 LDLIBS   += $(shell pkg-config --libs openssl 2>/dev/null || echo "-lcrypto -ldl")
 
+CFLAGS  += -Itrusted_applications
+
+LDFLAGS += -L/root/imx-optee-client/out/export/usr/lib
+LDLIBS  += -lteec
+
 ifneq (,$(findstring -DHAVE_LIBCAP,$(incdefs)))
 LDLIBS += -lcap
 endif
