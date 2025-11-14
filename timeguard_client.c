@@ -1,6 +1,8 @@
 #include <tee_client_api.h>
 #include "timeguard_client.h"
 #include "trusted_applications/register_ta.h"
+#include "print.h"
+
 
 static TEEC_Context g_ctx;
 static TEEC_Session g_sess;
@@ -68,5 +70,45 @@ bool tg_get_secure_time(struct tg_time_out *out_time)
 	*out_time = out;
 	return true;
 }
+
+bool tg_watchdog_error(int64_t err_ns)
+{
+    struct tg_watchdog_error_in in = { .err_ns = err_ns };
+
+    TEEC_Operation op = {0};
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_NONE, TEEC_NONE, TEEC_NONE);
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+
+    if (TEEC_InvokeCommand(&g_sess, TG_CMD_WATCHDOG_ERROR, &op, NULL) != TEEC_SUCCESS)
+        return false;
+
+    uint8_t trust_ok;
+    return tg_get_trust(&trust_ok) && trust_ok == 1;
+}
+
+bool tg_set_baseline_time(uint64_t sec, uint32_t nsec)
+{
+    struct tg_set_time_in in = {
+        .phc_seconds = sec,
+        .phc_nanoseconds = nsec
+    };
+
+    TEEC_Operation op = {0};
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_NONE, TEEC_NONE, TEEC_NONE);
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+
+    TEEC_Result r = TEEC_InvokeCommand(&g_sess,
+                                       TG_CMD_SET_TIME,
+                                       &op, NULL);
+
+		pr_notice("TG_CMD_SET_TIME InvokeCommand result: 0x%x\n", r);																	 
+
+    return r == TEEC_SUCCESS;
+}
+
 
 uint64_t tg_proxy_id(void) { return g_proxy_id; }

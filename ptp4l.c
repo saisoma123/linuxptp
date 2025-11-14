@@ -37,11 +37,10 @@
 #include "util.h"
 #include "version.h"
 #include "timeguard_client.h"
-#include "timeguard_watchdog"
+#include "timeguard_watchdog.h"
 #include <time.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <sys/ioctl.h>
+#include <fcntl.h>          
 #include <linux/ptp_clock.h>
 
 #define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
@@ -90,6 +89,10 @@ static void timeguard_policy_c_step(void)
 }
 */
 
+static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
+{
+    return (int64_t)t->seconds * 1000000000LL + (int64_t)t->nanoseconds;
+}
 
 static int64_t phc_get_time_ns(const char *ptp_path)
 {
@@ -332,7 +335,24 @@ int main(int argc, char *argv[])
 	while (is_running()) {
 		if (clock_poll(clock))
 			break;
-		int64_t phc_ns = phc_get_time_ns("/dev/ptp0");;
+		int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+		pr_notice("PHC time: %lld ns\n", (long long)phc_ns);
+				struct tg_time_out st;
+
+		
+		if (!tg_get_secure_time(&st)) {
+				pr_notice("Secure time: FAILED\n");
+		}
+
+		uint64_t sec  = st.seconds;
+		uint32_t nsec = st.nanoseconds;
+		int64_t total = secure_time_to_ns(&st);
+
+		pr_notice("Secure time: sec=%llu nsec=%u (total=%lld ns)\n",
+							(unsigned long long)sec,
+							nsec,
+							(long long)total);
+
 		tg_watchdog_sample_simple(phc_ns);
 		// timeguard_policy_c_step();
 	}

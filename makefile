@@ -33,7 +33,7 @@ OBJ	= bmc.o clock.o clockadj.o clockcheck.o config.o designated_fsm.o \
  e2e_tc.o fault.o $(FILTERS) fsm.o hash.o interface.o monitor.o msg.o phc.o \
  pmc_common.o port.o port_signaling.o pqueue.o print.o ptp4l.o p2p_tc.o rtnl.o \
  $(SECURITY) $(SERVOS) sk.o stats.o tc.o $(TRANSP) telecom.o tlv.o tsproc.o \
- unicast_client.o unicast_fsm.o unicast_service.o util.o version.o timeguard_client.o
+ unicast_client.o unicast_fsm.o unicast_service.o util.o version.o timeguard_client.o timeguard_watchdog.o
 
 OBJECTS	= $(OBJ) hwstamp_ctl.o nsm.o phc2sys.o phc_ctl.o pmc.o pmc_agent.o \
  pmc_common.o sysoff.o timemaster.o $(TS2PHC) tz2alt.o
@@ -58,7 +58,11 @@ CPPFLAGS += $(shell pkg-config --cflags libteec 2>/dev/null)
 LDLIBS   += $(shell pkg-config --libs   libteec 2>/dev/null || echo -lteec)
 # Prefer pkg-config openssl; fall back to libcrypto + dl
 LDLIBS   += $(shell pkg-config --libs openssl 2>/dev/null || echo "-lcrypto -ldl")
+
 CFLAGS  += -Itrusted_applications
+
+LDFLAGS += -L/root/imx-optee-client/out/export/usr/lib
+LDLIBS  += -lteec
 
 ifneq (,$(findstring -DHAVE_LIBCAP,$(incdefs)))
 LDLIBS += -lcap

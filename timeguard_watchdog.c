@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "timeguard_client.h"
 #include "trusted_applications/register_ta.h"
+#include <tee_client_api.h>
 
 static int64_t g_sum_err_ns = 0;
 static uint64_t g_cnt = 0;
@@ -57,23 +58,6 @@ double tg_watchdog_get_mean_err(void)
 {
     if (g_cnt == 0) return 0.0;
     return (double)g_sum_err_ns / (double)g_cnt;
-}
-
-bool tg_watchdog_error(int64_t err_ns)
-{
-    struct tg_watchdog_error_in in = { .err_ns = err_ns };
-
-    TEEC_Operation op = {0};
-    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
-                                     TEEC_NONE, TEEC_NONE, TEEC_NONE);
-    op.params[0].tmpref.buffer = &in;
-    op.params[0].tmpref.size   = sizeof(in);
-
-    if (TEEC_InvokeCommand(&g_sess, TG_CMD_WATCHDOG_ERROR, &op, NULL) != TEEC_SUCCESS)
-        return false;
-
-    uint8_t trust_ok;
-    return tg_get_trust(&trust_ok) && trust_ok == 1;
 }
 
 int64_t tg_get_instant_error(int64_t phc_time_ns)

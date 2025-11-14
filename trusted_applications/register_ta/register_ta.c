@@ -82,9 +82,8 @@ static TEE_Result cmd_get_secure_time(uint32_t ptypes, TEE_Param params[4])
 		return TEE_ERROR_SHORT_BUFFER;
 
 	TEE_Time t;
-	TEE_Result r = TEE_GetSystemTime(&t);
-	if (r != TEE_SUCCESS)
-		return r;
+	TEE_GetREETime(&t);
+
 
 	out->seconds     = (uint64_t)t.seconds;
 	/* TEE_Time gives milliseconds; convert to nanoseconds */
@@ -120,6 +119,31 @@ static TEE_Result cmd_watchdog_error(uint32_t ptypes, TEE_Param params[4])
 	return TEE_SUCCESS;
 }
 
+static TEE_Result cmd_set_baseline_time(uint32_t ptypes,
+                                        TEE_Param params[4])
+{
+    if (TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+                        TEE_PARAM_TYPE_NONE,
+                        TEE_PARAM_TYPE_NONE,
+                        TEE_PARAM_TYPE_NONE) != ptypes)
+        return TEE_ERROR_BAD_PARAMETERS;
+
+    struct tg_set_time_in *in = params[0].memref.buffer;
+    if (params[0].memref.size < sizeof(*in))
+        return TEE_ERROR_SHORT_BUFFER;
+
+    TEE_Time t;
+    t.seconds = in->phc_seconds;
+    t.millis  = in->phc_nanoseconds / 1000000; // ns → ms
+
+    TEE_Result r = TEE_SetTAPersistentTime(&t);
+    if (r != TEE_SUCCESS)
+        return r;
+
+
+    return TEE_SUCCESS;
+}
+
 
 TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
                                       uint32_t ptypes, TEE_Param params[4]) {
@@ -129,6 +153,7 @@ TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
 	case TG_CMD_GET_TRUST: return cmd_get_trust(ptypes, params);
 	case TG_CMD_GET_SECURE_TIME: return cmd_get_secure_time(ptypes, params);
 	case TG_CMD_WATCHDOG_ERROR: return cmd_watchdog_error(ptypes, params);
+	case TG_CMD_SET_TIME: return cmd_set_baseline_time(ptypes, params);
 	default:               return TEE_ERROR_NOT_SUPPORTED;
 	}
 }
