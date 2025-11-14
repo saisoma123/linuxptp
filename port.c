@@ -45,7 +45,8 @@
 #include "unicast_client.h"
 #include "unicast_service.h"
 #include "util.h"
-
+#include "trusted_applications/bmca_ta.h"
+#include <tee_client_api.h>
 #define ANNOUNCE_SPAN 1
 #define CMLDS_SUBSCRIPTION_INTERVAL	60 /*seconds*/
 #define CMLDS_UPDATE_INTERVAL		(CMLDS_SUBSCRIPTION_INTERVAL / 2)
@@ -3554,10 +3555,9 @@ err:
 	msg_put(msg);
 }
 
-static int tee_ptp_fsm(enum port_state state,
+enum port_state tee_ptp_fsm(enum port_state state,
                        enum fsm_event event,
-                       int mdiff,
-                       enum port_state *next_state_out)
+                       int mdiff)
 {
     TEEC_Context ctx;
     TEEC_Session sess;
@@ -3609,22 +3609,17 @@ static int tee_ptp_fsm(enum port_state state,
     if (res != TEEC_SUCCESS) {
         pr_notice("TEE FSM: PTP_FSM failed 0x%x origin 0x%x\n",
                   res, err_origin);
-        return 0;
     }
-
-    if (next_state_out)
-        *next_state_out = (enum port_state)out.next_state;
 
     pr_notice("TEE FSM: state=%u ev=%u mdiff=%d -> next=%u\n",
               in.state, in.event, in.mdiff, out.next_state);
 
-    return 1;
+    return (enum port_state)out.next_state;
 }
 
-static int tee_ptp_slave_fsm(enum port_state state,
+enum port_state tee_ptp_slave_fsm(enum port_state state,
                              enum fsm_event event,
-                             int mdiff,
-                             enum port_state *next_state_out)
+                             int mdiff)
 {
     TEEC_Context ctx;
     TEEC_Session sess;
@@ -3676,16 +3671,12 @@ static int tee_ptp_slave_fsm(enum port_state state,
     if (res != TEEC_SUCCESS) {
         pr_notice("TEE FSM: PTP_SLAVE_FSM failed 0x%x origin 0x%x\n",
                   res, err_origin);
-        return 0;
     }
-
-    if (next_state_out)
-        *next_state_out = (enum port_state)out.next_state;
 
     pr_notice("TEE FSM: (slave) state=%u ev=%u mdiff=%d -> next=%u\n",
               in.state, in.event, in.mdiff, out.next_state);
 
-    return 1;
+    return (enum port_state)out.next_state;
 }
 
 

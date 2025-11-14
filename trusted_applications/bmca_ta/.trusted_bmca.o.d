@@ -15,7 +15,7 @@ trusted_bmca.o: trusted_bmca.c \
  /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/include/tee_internal_api_extensions.h \
  /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/include/stdio.h \
  /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/include/tee_api_defines_extensions.h \
- ../bmca_ta.h
+ ../bmca_ta.h ../fsm.h
 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/include/tee_internal_api.h:
 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/include/compiler.h:
 /usr/lib/gcc/arm-poky-linux-gnueabi/14.3.0/include/stddef.h:
@@ -33,3 +33,4 @@ trusted_bmca.o: trusted_bmca.c \
 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/include/stdio.h:
 /root/imx-optee-os/out/arm-plat-imx/export-ta_arm32/include/tee_api_defines_extensions.h:
 ../bmca_ta.h:
+../fsm.h:
