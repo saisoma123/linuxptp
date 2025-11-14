@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
 			break;
 		int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
 		tg_watchdog_sample_simple(phc_ns);
-		timeguard_policy_c_step();
+	//	timeguard_policy_c_step();
                 
 	}
 out:
