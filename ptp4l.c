@@ -273,13 +273,19 @@ int main(int argc, char *argv[])
 
         tx.modes = ADJ_FREQUENCY;
         tx.freq = (long) (5 * 65.536);
-        
+
+        struct timespec last_adj = {0};
+
 	while (is_running()) {
+	    	struct timespec now;
+    		clock_gettime(CLOCK_MONOTONIC, &now);
 
-	        if (clock_adjtime(clkid, &tx) < 0) {
-        	        pr_notice("failed to adjust the clock: %m");
-        	}
-
+    		if (now.tv_sec != last_adj.tv_sec) {
+        		last_adj = now;
+	        	if (clock_adjtime(clkid, &tx) < 0) {
+        	        	pr_notice("failed to adjust the clock: %m");
+        		}
+		}
 		if (clock_poll(clock))
 			break;
 	}
