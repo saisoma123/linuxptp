@@ -283,9 +283,9 @@ int main(int argc, char *argv[])
 	
 	        
 	while (is_running()) {	
-        	// if (clock_adjtime(clkid, &tx_step) < 0) {  
-                //	pr_notice("failed to step clock (+10us): %m");
-           	//}
+        	if (clock_adjtime(clkid, &tx_step) < 0) {  
+                	pr_notice("failed to step clock (+10us): %m");
+           	}
                            	
                 if (clock_poll(clock))
 			break;
