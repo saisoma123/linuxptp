@@ -125,7 +125,7 @@ struct mac_data *sad_init_mac(integrity_alg_type algorithm,
         free(md);
         return NULL;
     }
-
+    pr_notice("MAC initialization");
     md->key_handle = op.params[2].value.a;
     return md;
 }
@@ -189,7 +189,7 @@ int sad_hash(struct mac_data *md,
 
     if (res != TEEC_SUCCESS)
         return 0;
-
+    pr_notice("MAC computation op");
     return mac_len;
 }
 
@@ -245,7 +245,7 @@ int sad_verify(struct mac_data *md,
 
     TEEC_CloseSession(&sess);
     TEEC_FinalizeContext(&ctx);
-
+    pr_notice("MAC verify done");
     if (res == TEEC_SUCCESS)
         return 0;                   /* match */
 
@@ -299,6 +299,6 @@ void sad_deinit_mac(struct mac_data *md)
 
         TEEC_FinalizeContext(&ctx);
     }
-
+    pr_notice("MAC deinit done");
     free(md);
 }
