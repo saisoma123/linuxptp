@@ -64,7 +64,7 @@ static int64_t phc_get_time_ns(const char *ptp_path)
         return 0;   // or any sentinel you want
 
     clockid_t clkid = FD_TO_CLOCKID(fd);
-		id = clkid;
+	//	id = clkid;
     struct timespec ts;
     if (clock_gettime(clkid, &ts) < 0) {
         close(fd);
@@ -357,18 +357,25 @@ int main(int argc, char *argv[])
         tg_set_baseline_time(sec, nsec);
 	struct timespec last_adj = {0};	        
 	while (is_running()) {
-                struct timespec now;
-    	        clock_gettime(CLOCK_MONOTONIC, &now);
-                if (now.tv_sec != last_adj.tv_sec) {
-                	last_adj = now;	        
-                	int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-                	tg_watchdog_sample_simple(phc_ns);
-	        }
+             //   struct timespec now;
+    	     //   clock_gettime(CLOCK_MONOTONIC, &now);
+             //   if (now.tv_sec != last_adj.tv_sec) {
+             //   	last_adj = now;	        
+              //  	// int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+             //   	tg_watchdog_sample_simple(123);
+	     //   }
                 if (clock_poll(clock))
 			break;
+                struct timespec now;
+                clock_gettime(CLOCK_MONOTONIC, &now);
+                if (now.tv_sec != last_adj.tv_sec) {
+                        last_adj = now;
+                        int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+                        tg_watchdog_sample_simple(phc_ns);
+                }
 		
 		//timeguard_policy_c_step();
-                
+               
 	}
 out:
 	if (clock)

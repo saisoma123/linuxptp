@@ -4,6 +4,12 @@
 #include "trusted_applications/register_ta.h"
 #include <tee_client_api.h>
 #include <time.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <linux/ptp_clock.h>
+
+#define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
+
 
 static int64_t g_sum_err_ns = 0;
 static uint64_t g_cnt = 0;
@@ -21,6 +27,25 @@ static void tg_open_log(void)
     }
 }
 
+static int64_t phc_get_time_ns(const char *ptp_path)
+{
+    int fd = open(ptp_path, O_RDONLY);
+    if (fd < 0)
+        return 0;   // or any sentinel you want
+
+    clockid_t clkid = FD_TO_CLOCKID(fd);
+        //      id = clkid;
+    struct timespec ts;
+    if (clock_gettime(clkid, &ts) < 0) {
+        close(fd);
+        return 0;
+    }
+
+    close(fd);
+
+    return (int64_t)ts.tv_sec * 1000000000LL + (int64_t)ts.tv_nsec;
+}
+
 
 
 static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
@@ -30,6 +55,11 @@ static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
 
 void tg_watchdog_sample_simple(int64_t phc_time_ns)
 {
+//      int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+//      uint64_t sec  = phc_ns / 1000000000LL;    // convert ns  ^f^r seconds
+//      uint32_t nsec = phc_ns % 1000000000LL;
+//      tg_set_baseline_time(sec, nsec);
+
     struct tg_time_out st = {0};
     struct timespec t0, t1;
     clock_gettime(CLOCK_MONOTONIC, &t0);
