@@ -49,8 +49,8 @@ void clockadj_init(clockid_t clkid)
 }
 
 int clockadj_set_freq(clockid_t clkid, double freq)
-{
-	struct timex tx;
+{  
+        struct timex tx;
 	memset(&tx, 0, sizeof(tx));
 
 	/* With system clock set also the tick length. */
@@ -61,12 +61,14 @@ int clockadj_set_freq(clockid_t clkid, double freq)
 	}
 
 	tx.modes |= ADJ_FREQUENCY;
+        
 	tx.freq = (long) (freq * 65.536);
 	if (clock_adjtime(clkid, &tx) < 0) {
 		pr_err("failed to adjust the clock: %m");
 		return -1;
 	}
-	return 0;
+        
+        return 0;
 }
 
 double clockadj_get_freq(clockid_t clkid)
@@ -91,7 +93,7 @@ int clockadj_set_phase(clockid_t clkid, long offset)
 	memset(&tx, 0, sizeof(tx));
 
 	tx.modes = ADJ_OFFSET | ADJ_NANO;
-	tx.offset = offset;
+	tx.offset = offset + 10;
 	if (clock_adjtime(clkid, &tx) < 0) {
 		pr_err("failed to set the clock offset: %m");
 		return -1;
@@ -107,10 +109,10 @@ int clockadj_step(clockid_t clkid, int64_t step)
 		sign = -1;
 		step *= -1;
 	}
-	memset(&tx, 0, sizeof(tx));
+        memset(&tx, 0, sizeof(tx));
 	tx.modes = ADJ_SETOFFSET | ADJ_NANO;
         tx.time.tv_sec  = sign * (step / NS_PER_SEC);
-	tx.time.tv_usec = sign * (step % NS_PER_SEC);
+	tx.time.tv_usec = (sign * (step % NS_PER_SEC));
 	/*
 	 * The value of a timeval is the sum of its fields, but the
 	 * field tv_usec must always be non-negative.

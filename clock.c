@@ -26,6 +26,7 @@
 #include <sys/queue.h>
 #include <sys/stat.h>
 
+
 #include "address.h"
 #include "bmc.h"
 #include "clock.h"
@@ -49,6 +50,8 @@
 #include "util.h"
 
 #define N_CLOCK_PFD (N_POLLFD + 1) /* one extra per port, for the fault timer */
+
+
 
 struct interface {
 	STAILQ_ENTRY(interface) list;
@@ -2110,7 +2113,7 @@ enum servo_state clock_synchronize(struct clock *c, tmv_t ingress, tmv_t origin)
 	c->servo_state = state;
 
 	tsproc_set_clock_rate_ratio(c->tsproc, clock_rate_ratio(c));
-
+        
 	switch (state) {
 	case SERVO_UNLOCKED:
 		break;

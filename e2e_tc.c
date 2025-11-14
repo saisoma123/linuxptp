@@ -17,7 +17,6 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1335 USA.
  */
 #include <errno.h>
-
 #include "port.h"
 #include "port_private.h"
 #include "print.h"

@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #include "clock.h"
@@ -36,6 +38,11 @@
 #include "uds.h"
 #include "util.h"
 #include "version.h"
+
+
+#define CLOCKFD        3
+#define CLOCKID_TO_FD(clk)  ((unsigned int) ~((clk) >> 3))
+#define FD_TO_CLOCKID(fd) ((~(clockid_t) (fd) << 3) | CLOCKFD)
 
 static void usage(char *progname)
 {
@@ -255,9 +262,32 @@ int main(int argc, char *argv[])
 	}
 
 	err = 0;
+        int fd = open("/dev/ptp0", O_RDWR);
+        if (fd < 0) {
+                pr_notice("open /dev/ptp0");
+        }
+        clockid_t clkid = FD_TO_CLOCKID(fd);
+        struct timex tx_step;
+        memset(&tx_step, 0, sizeof(tx_step));
 
-	while (is_running()) {
-		if (clock_poll(clock))
+        tx_step.modes = ADJ_SETOFFSET | ADJ_NANO;
+
+        /* Relative step of +10   s. In ADJ_NANO, tv_usec is nanoseconds. */
+        tx_step.time.tv_sec  = 0;
+        tx_step.time.tv_usec = 3000;   /* 10   s = 10,000 ns */
+
+        if (tx_step.time.tv_usec < 0) {
+                tx_step.time.tv_sec  -= 1;
+                tx_step.time.tv_usec += 1000000000L;
+        }
+	
+	        
+	while (is_running()) {	
+        	// if (clock_adjtime(clkid, &tx_step) < 0) {  
+                //	pr_notice("failed to step clock (+10us): %m");
+           	//}
+                           	
+                if (clock_poll(clock))
 			break;
 	}
 out:

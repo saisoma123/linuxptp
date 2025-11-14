@@ -50,6 +50,8 @@
 #define CMLDS_SUBSCRIPTION_INTERVAL	60 /*seconds*/
 #define CMLDS_UPDATE_INTERVAL		(CMLDS_SUBSCRIPTION_INTERVAL / 2)
 
+
+
 enum syfu_event {
 	SYNC_MISMATCH,
 	SYNC_MATCH,
@@ -1437,8 +1439,8 @@ static void port_synchronize(struct port *p,
 	sad_set_last_seqid(clock_config(p->clock), p->spp, seqid);
 
 	last_state = clock_servo_state(p->clock);
-	state = clock_synchronize(p->clock, t2, t1c);
-	switch (state) {
+	state = clock_synchronize(p->clock, t2, t1c);	
+        switch (state) {
 	case SERVO_UNLOCKED:
 		port_dispatch(p, EV_SYNCHRONIZATION_FAULT, 0);
 		if (servo_offset_threshold(clock_servo(p->clock)) != 0 &&
@@ -2741,9 +2743,9 @@ void process_pdelay_resp_fup(struct port *p, struct ptp_message *m)
 }
 
 void process_sync(struct port *p, struct ptp_message *m)
-{
+{	
 	enum syfu_event event;
-	switch (p->state) {
+        switch (p->state) {
 	case PS_INITIALIZING:
 	case PS_FAULTY:
 	case PS_DISABLED:
