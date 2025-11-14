@@ -370,8 +370,8 @@ int main(int argc, char *argv[])
                 clock_gettime(CLOCK_MONOTONIC, &now);
                 if (now.tv_sec != last_adj.tv_sec) {
                         last_adj = now;
-                        int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-                        tg_watchdog_sample_simple(phc_ns);
+                        //int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+                        tg_watchdog_sample_simple(123);
                 }
 		
 		//timeguard_policy_c_step();
