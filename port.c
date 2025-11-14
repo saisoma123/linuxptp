@@ -3576,15 +3576,15 @@ enum port_state tee_ptp_fsm(enum port_state state,
 
     res = TEEC_InitializeContext(NULL, &ctx);
     if (res != TEEC_SUCCESS) {
-        pr_notice("TEE FSM: InitializeContext failed 0x%x\n", res);
+        // pr_notice("TEE FSM: InitializeContext failed 0x%x\n", res);
         return 0;
     }
 
     res = TEEC_OpenSession(&ctx, &sess, &uuid,
                            TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
     if (res != TEEC_SUCCESS) {
-        pr_notice("TEE FSM: OpenSession failed 0x%x origin 0x%x\n",
-                  res, err_origin);
+        // pr_notice("TEE FSM: OpenSession failed 0x%x origin 0x%x\n",
+               // res, err_origin);
         TEEC_FinalizeContext(&ctx);
         return 0;
     }
@@ -3601,18 +3601,18 @@ enum port_state tee_ptp_fsm(enum port_state state,
     op.params[1].tmpref.size   = sizeof(out);
 
     res = TEEC_InvokeCommand(&sess, TA_BMCA_CMD_PTP_FSM, &op, &err_origin);
-    pr_notice("TEE FSM: InvokeCommand returned 0x%x\n", res);
+    //pr_notice("TEE FSM: InvokeCommand returned 0x%x\n", res);
 
     TEEC_CloseSession(&sess);
     TEEC_FinalizeContext(&ctx);
 
     if (res != TEEC_SUCCESS) {
-        pr_notice("TEE FSM: PTP_FSM failed 0x%x origin 0x%x\n",
-                  res, err_origin);
+       // pr_notice("TEE FSM: PTP_FSM failed 0x%x origin 0x%x\n",
+                  // res, err_origin);
     }
 
-    pr_notice("TEE FSM: state=%u ev=%u mdiff=%d -> next=%u\n",
-              in.state, in.event, in.mdiff, out.next_state);
+    // pr_notice("TEE FSM: state=%u ev=%u mdiff=%d -> next=%u\n",
+              // in.state, in.event, in.mdiff, out.next_state);
 
     return (enum port_state)out.next_state;
 }
@@ -3638,15 +3638,15 @@ enum port_state tee_ptp_slave_fsm(enum port_state state,
 
     res = TEEC_InitializeContext(NULL, &ctx);
     if (res != TEEC_SUCCESS) {
-        pr_notice("TEE FSM: InitializeContext failed 0x%x\n", res);
+        // pr_notice("TEE FSM: InitializeContext failed 0x%x\n", res);
         return 0;
     }
 
     res = TEEC_OpenSession(&ctx, &sess, &uuid,
                            TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
     if (res != TEEC_SUCCESS) {
-        pr_notice("TEE FSM: OpenSession failed 0x%x origin 0x%x\n",
-                  res, err_origin);
+        // pr_notice("TEE FSM: OpenSession failed 0x%x origin 0x%x\n",
+                 // res, err_origin);
         TEEC_FinalizeContext(&ctx);
         return 0;
     }
@@ -3663,18 +3663,18 @@ enum port_state tee_ptp_slave_fsm(enum port_state state,
     op.params[1].tmpref.size   = sizeof(out);
 
     res = TEEC_InvokeCommand(&sess, TA_BMCA_CMD_PTP_SLAVE_FSM, &op, &err_origin);
-    pr_notice("TEE FSM: InvokeCommand returned 0x%x\n", res);
+    // pr_notice("TEE FSM: InvokeCommand returned 0x%x\n", res);
 
     TEEC_CloseSession(&sess);
     TEEC_FinalizeContext(&ctx);
 
     if (res != TEEC_SUCCESS) {
-        pr_notice("TEE FSM: PTP_SLAVE_FSM failed 0x%x origin 0x%x\n",
-                  res, err_origin);
+       // pr_notice("TEE FSM: PTP_SLAVE_FSM failed 0x%x origin 0x%x\n",
+                 // res, err_origin);
     }
 
-    pr_notice("TEE FSM: (slave) state=%u ev=%u mdiff=%d -> next=%u\n",
-              in.state, in.event, in.mdiff, out.next_state);
+    // pr_notice("TEE FSM: (slave) state=%u ev=%u mdiff=%d -> next=%u\n",
+              // in.state, in.event, in.mdiff, out.next_state);
 
     return (enum port_state)out.next_state;
 }
