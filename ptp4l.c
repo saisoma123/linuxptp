@@ -281,12 +281,19 @@ int main(int argc, char *argv[])
                 tx_step.time.tv_usec += 1000000000L;
         }
 	
-	        
+	
+	struct timespec last_adj = {0};	        
 	while (is_running()) {	
-        	if (clock_adjtime(clkid, &tx_step) < 0) {  
-                	pr_notice("failed to step clock (+10us): %m");
-           	}
-                           	
+               struct timespec now;
+    	       clock_gettime(CLOCK_MONOTONIC, &now);
+               if (now.tv_sec != last_adj.tv_sec) {
+               last_adj = now;
+               
+        	if (clock_adjtime(clkid, &tx_step) < 0) {
+            		pr_notice("failed to step clock (+10us): %m\n");
+        	}
+    	      }
+                    	
                 if (clock_poll(clock))
 			break;
 	}
