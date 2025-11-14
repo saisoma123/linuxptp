@@ -57,43 +57,6 @@ static void timeguard_init(void)
 	}
 }
 
-/*
-static void timeguard_policy_c_step(void)
-{
-    // int m = 1;
-    // int n = 1;
-    // int64_t tS = 10000000LL; // placeholder
-
-    // int64_t p = (m * tS) / n;
-    // int64_t slot = p / 10;
-
-    // struct timespec now;
-    // clock_gettime(CLOCK_MONOTONIC, &now);
-    // int64_t now_ns = now.tv_sec * 1000000000LL + now.tv_nsec;
-
-    // static int64_t next_inspect_time = 0;
-    // if (next_inspect_time == 0) {
-    //     int r = rand() % 11;
-    //     next_inspect_time = now_ns + r * slot;
-    // }
-
-    // if (now_ns < next_inspect_time)
-    //     return;
-
-    // int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-    // int64_t err_ns = tg_get_instant_error(phc_ns);
-    // bool trusted = tg_watchdog_error(err_ns);
-
-    // int r2 = rand() % 11;
-    // next_inspect_time = now_ns + r2 * slot;
-}
-*/
-
-static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
-{
-    return (int64_t)t->seconds * 1000000000LL + (int64_t)t->nanoseconds;
-}
-
 static int64_t phc_get_time_ns(const char *ptp_path)
 {
     int fd = open(ptp_path, O_RDONLY);
@@ -112,6 +75,45 @@ static int64_t phc_get_time_ns(const char *ptp_path)
 
     return (int64_t)ts.tv_sec * 1000000000LL + (int64_t)ts.tv_nsec;
 }
+
+
+static void timeguard_policy_c_step(void)
+{
+     int m = 1;
+     int n = 1;
+     int64_t tS = 10000000LL; // placeholder
+
+     int64_t p = (m * tS) / n;
+     int64_t slot = p / 10;
+
+     struct timespec now;
+     clock_gettime(CLOCK_MONOTONIC, &now);
+     int64_t now_ns = now.tv_sec * 1000000000LL + now.tv_nsec;
+
+     static int64_t next_inspect_time = 0;
+     if (next_inspect_time == 0) {
+         int r = rand() % 11;
+         next_inspect_time = now_ns + r * slot;
+     }
+
+    if (now_ns < next_inspect_time)
+         return;
+
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+    int64_t err_ns = tg_get_instant_error(phc_ns);
+    bool trusted = tg_watchdog_error(err_ns);
+    pr_notice("trusted: %s\n", trusted ? "true" : "false");
+    
+    int r2 = rand() % 11;
+    next_inspect_time = now_ns + r2 * slot;
+}
+
+
+static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
+{
+    return (int64_t)t->seconds * 1000000000LL + (int64_t)t->nanoseconds;
+}
+
 
 static void usage(char *progname)
 {
@@ -340,7 +342,8 @@ int main(int argc, char *argv[])
 			break;
 		int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
 		tg_watchdog_sample_simple(phc_ns);
-		// timeguard_policy_c_step();
+		timeguard_policy_c_step();
+                
 	}
 out:
 	if (clock)
