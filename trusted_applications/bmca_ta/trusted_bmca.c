@@ -15,6 +15,29 @@
 #include <trace.h>
 #include "fsm.h"
 
+TEE_Result cmd_import_key(uint32_t pt, TEE_Param p[4]);
+TEE_Result cmd_mac_compute(uint32_t pt, TEE_Param p[4]);
+TEE_Result cmd_mac_verify(uint32_t pt, TEE_Param p[4]);
+TEE_Result cmd_delete_key(uint32_t pt, TEE_Param p[4]);
+
+typedef enum {
+	MAC_INVALID = 0,
+	HMAC_SHA256_128,
+	HMAC_SHA256,
+	CMAC_AES128,
+	CMAC_AES256,
+} integrity_alg_type;
+
+
+struct integrity_alg_info {
+	const char         *label;
+	integrity_alg_type type; /* algorithm type - minimum HMAC-SHA256-128 */
+	size_t             key_len;    /* length of key */
+	size_t             digest_len; /* length of icv */
+};
+
+
+
 #define MAX_KEYS 16
 
 /* =========================
@@ -74,30 +97,40 @@ static struct key_entry *find_key(uint32_t h)
 }
 
 /* ---------- CMD_IMPORT_KEY ---------- */
-TEE_Result cmd_import_key(uint32_t pt, TEE_Param p[4])
+TEE_Result cmd_import_key(uint32_t pt __unused, TEE_Param p[4])
 {
     uint32_t alg = p[0].value.a;
     void *key = p[1].memref.buffer;
     size_t key_len = p[1].memref.size;
 
     uint32_t key_handle = 0;
-    TEE_OperationHandle op;
-    uint32_t tee_alg, max_key_bits;
+    TEE_OperationHandle op = TEE_HANDLE_NULL;
+    TEE_ObjectHandle key_obj = TEE_HANDLE_NULL;
+    uint32_t tee_alg, max_key_bits, key_type;
+
+    TEE_Result r;
+    int i;
+
+    if (!key || key_len == 0)
+        return TEE_ERROR_BAD_PARAMETERS;
 
     switch (alg) {
     case HMAC_SHA256:
     case HMAC_SHA256_128:
-        tee_alg = TEE_ALG_HMAC_SHA256;
-        max_key_bits = key_len * 8;
-        break;
+			tee_alg      = TEE_ALG_HMAC_SHA256;
+			key_type     = TEE_TYPE_GENERIC_SECRET;   // FIX FOR i.MX6Q
+			max_key_bits = key_len * 8;
+			break;
 
     case CMAC_AES128:
-        tee_alg = TEE_ALG_AES_CMAC;
+        tee_alg      = TEE_ALG_AES_CMAC;
+        key_type     = TEE_TYPE_AES;
         max_key_bits = 128;
         break;
 
     case CMAC_AES256:
-        tee_alg = TEE_ALG_AES_CMAC;
+        tee_alg      = TEE_ALG_AES_CMAC;
+        key_type     = TEE_TYPE_AES;
         max_key_bits = 256;
         break;
 
@@ -105,21 +138,35 @@ TEE_Result cmd_import_key(uint32_t pt, TEE_Param p[4])
         return TEE_ERROR_BAD_PARAMETERS;
     }
 
-    /* Allocate op */
-    TEE_Result r = TEE_AllocateOperation(&op, tee_alg, TEE_MODE_MAC,
-                                         max_key_bits);
+    /* 1) Allocate transient key object */
+    r = TEE_AllocateTransientObject(key_type, max_key_bits, &key_obj);
     if (r != TEE_SUCCESS)
-        return r;
+        goto err;
 
-    /* Load key */
-    r = TEE_SetOperationKey(op, key, key_len);
-    if (r != TEE_SUCCESS) {
-        TEE_FreeOperation(op);
-        return r;
-    }
+    /* 2) Fill it with the raw key bytes */
+    TEE_Attribute attr;
+    TEE_InitRefAttribute(&attr, TEE_ATTR_SECRET_VALUE, key, key_len);
 
-    /* Store in table */
-    for (int i = 0; i < MAX_KEYS; i++) {
+    r = TEE_PopulateTransientObject(key_obj, &attr, 1);
+    if (r != TEE_SUCCESS)
+        goto err;
+
+    /* 3) Allocate MAC operation */
+    r = TEE_AllocateOperation(&op, tee_alg, TEE_MODE_MAC, max_key_bits);
+    if (r != TEE_SUCCESS)
+        goto err;
+
+    /* 4) Bind the key object to the operation */
+    r = TEE_SetOperationKey(op, key_obj);
+    if (r != TEE_SUCCESS)
+        goto err;
+
+    /* We can free the transient key now; op holds a copy */
+    TEE_FreeTransientObject(key_obj);
+    key_obj = TEE_HANDLE_NULL;
+
+    /* 5) Store op in our key table */
+    for (i = 0; i < MAX_KEYS; i++) {
         if (keys[i].handle == 0) {
             key_handle = i + 1;
             keys[i].handle = key_handle;
@@ -129,8 +176,14 @@ TEE_Result cmd_import_key(uint32_t pt, TEE_Param p[4])
         }
     }
 
-    TEE_FreeOperation(op);
-    return TEE_ERROR_OUT_OF_MEMORY;
+    r = TEE_ERROR_OUT_OF_MEMORY;
+
+err:
+    if (op != TEE_HANDLE_NULL)
+        TEE_FreeOperation(op);
+    if (key_obj != TEE_HANDLE_NULL)
+        TEE_FreeTransientObject(key_obj);
+    return r;
 }
 
 /* ---------- CMD_MAC_COMPUTE ---------- */

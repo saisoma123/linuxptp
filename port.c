@@ -3812,7 +3812,7 @@ struct port *port_open(const char *phc_device,
 		config_get_int(cfg, p->name, "power_profile.2017.totalTimeInaccuracy");
 	p->slave_event_monitor = clock_slave_monitor(clock);
 	p->allowedLostResponses = config_get_int(cfg, p->name, "allowedLostResponses");
-	p->spp = config_get_int(cfg, p->name, "spp");
+	p->spp = 0; //changed to force SAD authentiation
 	p->active_key_id = config_get_uint(cfg, p->name, "active_key_id");
 
 	if (str2prid(config_get_string(cfg, p->name, "profileIdentity"),

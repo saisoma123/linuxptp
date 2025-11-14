@@ -36,6 +36,7 @@ struct mac_data *sad_init_mac(integrity_alg_type algorithm,
     TEEC_Context ctx;
     TEEC_Session sess;
     TEEC_Operation op;
+    TEEC_SharedMemory shm;
     TEEC_Result res;
     uint32_t err_origin;
     TEEC_UUID uuid = TA_BMCA_UUID;
@@ -81,27 +82,46 @@ struct mac_data *sad_init_mac(integrity_alg_type algorithm,
         return NULL;
     }
 
+    /* ---- Allocate shared memory for key ---- */
+    memset(&shm, 0, sizeof(shm));
+    shm.size  = key_len;
+    shm.flags = TEEC_MEM_INPUT;
+
+    res = TEEC_AllocateSharedMemory(&ctx, &shm);
+    if (res != TEEC_SUCCESS) {
+        pr_err("TEE: sad_init_mac: failed to alloc shared mem 0x%x", res);
+        TEEC_CloseSession(&sess);
+        TEEC_FinalizeContext(&ctx);
+        free(md);
+        return NULL;
+    }
+
+    memcpy(shm.buffer, key, key_len);
+
     /* ---- Build operation ---- */
     memset(&op, 0, sizeof(op));
 
     op.paramTypes = TEEC_PARAM_TYPES(
                         TEEC_VALUE_INPUT,       /* algorithm */
-                        TEEC_MEMREF_TEMP_INPUT, /* key bytes */
+                        TEEC_MEMREF_WHOLE,      /* key in shared mem */
                         TEEC_VALUE_OUTPUT,      /* key_handle */
                         TEEC_NONE);
 
-    op.params[0].value.a = algorithm;
-    op.params[1].tmpref.buffer = (void *) key;
-    op.params[1].tmpref.size   = key_len;
+    op.params[0].value.a       = algorithm;
+    op.params[1].memref.parent = &shm;
+    op.params[1].memref.offset = 0;
+    op.params[1].memref.size   = key_len;
 
     /* ---- Send command ---- */
     res = TEEC_InvokeCommand(&sess, CMD_IMPORT_KEY, &op, &err_origin);
 
+    TEEC_ReleaseSharedMemory(&shm);
     TEEC_CloseSession(&sess);
     TEEC_FinalizeContext(&ctx);
 
     if (res != TEEC_SUCCESS) {
-        pr_err("TEE: CMD_IMPORT_KEY failed 0x%x origin 0x%x", res, err_origin);
+        pr_err("TEE: CMD_IMPORT_KEY failed 0x%x origin 0x%x",
+               res, err_origin);
         free(md);
         return NULL;
     }
