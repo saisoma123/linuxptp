@@ -282,17 +282,26 @@ int main(int argc, char *argv[])
         tx.modes = ADJ_FREQUENCY;
         int32_t bias_ppb = sample_uniform_ppb_bound();
         double freq = (double)bias_ppb;
-	while (is_running()) {
-        	if (CALLS % 5 == 0) {
-                	bias_ppb = sample_uniform_ppb_bound();
-        		freq = (double)bias_ppb;
-    	        }
-		CALLS += 1;
-		tx.freq = (long) freq;
-                if (clock_adjtime(clkid, &tx) < 0) {
-                        pr_notice("failed to adjust the clock: %m");
-                }
+	struct timespec last_adj = {0};
+        while (is_running()) {
+            	struct timespec now;
+    		clock_gettime(CLOCK_MONOTONIC, &now);
 
+    		if (now.tv_sec != last_adj.tv_sec) {
+        		last_adj = now;
+	
+			if (CALLS % 5 == 0) {
+                		bias_ppb = sample_uniform_ppb_bound();
+        			freq = (double)bias_ppb;
+    	        	}
+		        CALLS += 1;
+
+		
+			tx.freq = (long) freq;
+                	if (clock_adjtime(clkid, &tx) < 0) {
+                        	pr_notice("failed to adjust the clock: %m");
+                	}
+		}
        		if (clock_poll(clock))
 				break;
 	}
