@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
+#include <fcntl.h>
 
 #include "clock.h"
 #include "config.h"
@@ -36,6 +38,20 @@
 #include "uds.h"
 #include "util.h"
 #include "version.h"
+
+#define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
+#define CLOCKID_TO_FD(clk)  ((int) ~((clk) >> 3))
+#define CLOCKFD        3
+
+static const int32_t RANDOM_PPB = 200;
+static int CALLS = 0;
+
+static inline int32_t sample_uniform_ppb_bound(void)
+{
+    if (RANDOM_PPB <= 0) return 0;
+    return (int32_t)(rand() % (2 * RANDOM_PPB + 1)) - RANDOM_PPB;
+}
+
 
 static void usage(char *progname)
 {
@@ -255,10 +271,30 @@ int main(int argc, char *argv[])
 	}
 
 	err = 0;
-
+        int fd = open("/dev/ptp0", O_RDWR);
+        if (fd < 0) {
+                perror("open /dev/ptp0");
+                return -1;
+        }
+        clockid_t clkid = FD_TO_CLOCKID(fd);
+        struct timex tx;
+        memset(&tx, 0, sizeof(tx));
+        tx.modes = ADJ_FREQUENCY;
+        int32_t bias_ppb = sample_uniform_ppb_bound();
+        double freq = (double)bias_ppb;
 	while (is_running()) {
-		if (clock_poll(clock))
-			break;
+        	if (CALLS % 5 == 0) {
+                	bias_ppb = sample_uniform_ppb_bound();
+        		freq = (double)bias_ppb;
+    	        }
+		CALLS += 1;
+		tx.freq = (long) freq;
+                if (clock_adjtime(clkid, &tx) < 0) {
+                        pr_notice("failed to adjust the clock: %m");
+                }
+
+       		if (clock_poll(clock))
+				break;
 	}
 out:
 	if (clock)
