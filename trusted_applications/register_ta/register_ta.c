@@ -82,7 +82,7 @@ static TEE_Result cmd_get_secure_time(uint32_t ptypes, TEE_Param params[4])
 		return TEE_ERROR_SHORT_BUFFER;
 
 	TEE_Time t;
-	TEE_GetREETime(&t);
+	TEE_GetTAPersistentTime(&t);
 
 
 	out->seconds     = (uint64_t)t.seconds;

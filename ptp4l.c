@@ -331,28 +331,14 @@ int main(int argc, char *argv[])
 	}
 	timeguard_init();
 	err = 0;
-
+        int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+        uint64_t sec  = phc_ns / 1000000000LL;    // convert ns → seconds
+	uint32_t nsec = phc_ns % 1000000000LL;    
+        tg_set_baseline_time(sec, nsec);
 	while (is_running()) {
 		if (clock_poll(clock))
 			break;
 		int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-		pr_notice("PHC time: %lld ns\n", (long long)phc_ns);
-				struct tg_time_out st;
-
-		
-		if (!tg_get_secure_time(&st)) {
-				pr_notice("Secure time: FAILED\n");
-		}
-
-		uint64_t sec  = st.seconds;
-		uint32_t nsec = st.nanoseconds;
-		int64_t total = secure_time_to_ns(&st);
-
-		pr_notice("Secure time: sec=%llu nsec=%u (total=%lld ns)\n",
-							(unsigned long long)sec,
-							nsec,
-							(long long)total);
-
 		tg_watchdog_sample_simple(phc_ns);
 		// timeguard_policy_c_step();
 	}

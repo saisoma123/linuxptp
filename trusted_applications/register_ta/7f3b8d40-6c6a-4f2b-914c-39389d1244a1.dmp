@@ -62,11 +62,11 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, ALLOC, LOAD, DATA
  13 .bss          0000b860  00010398  00010398  00011398  2**2
                   ALLOC
- 14 .debug_info   00022ed3  00000000  00000000  00011398  2**0
+ 14 .debug_info   00022ed7  00000000  00000000  00011398  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 15 .debug_abbrev 0000557e  00000000  00000000  0003426b  2**0
+ 15 .debug_abbrev 0000557e  00000000  00000000  0003426f  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_loclists 00016519  00000000  00000000  000397e9  2**0
+ 16 .debug_loclists 00016519  00000000  00000000  000397ed  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  17 .debug_aranges 000006d0  00000000  00000000  0004fd08  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
@@ -934,7 +934,7 @@ cmd_get_secure_time():
 /root/linuxptp/trusted_applications/register_ta/register_ta.c:80
       da:	681c      	ldr	r4, [r3, #0]
 /root/linuxptp/trusted_applications/register_ta/register_ta.c:85
-      dc:	f001 fb0c 	bl	16f8 <TEE_GetREETime>
+      dc:	f001 fada 	bl	1694 <TEE_GetTAPersistentTime>
 /root/linuxptp/trusted_applications/register_ta/register_ta.c:88
       e0:	9b00      	ldr	r3, [sp, #0]
       e2:	2000      	movs	r0, #0
