@@ -22,6 +22,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
+#include <fcntl.h>
 
 #include "clock.h"
 #include "config.h"
@@ -36,6 +38,11 @@
 #include "uds.h"
 #include "util.h"
 #include "version.h"
+
+#define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
+#define CLOCKID_TO_FD(clk)  ((int) ~((clk) >> 3))
+#define CLOCKFD        3
+
 
 static void usage(char *progname)
 {
@@ -255,8 +262,24 @@ int main(int argc, char *argv[])
 	}
 
 	err = 0;
+        int fd = open("/dev/ptp0", O_RDWR);
+        if (fd < 0) {
+                perror("open /dev/ptp0");
+                return -1;
+        }
+        clockid_t clkid = FD_TO_CLOCKID(fd);
+        struct timex tx;
+        memset(&tx, 0, sizeof(tx));
 
+        tx.modes = ADJ_FREQUENCY;
+        tx.freq = (long) (5 * 65.536);
+        
 	while (is_running()) {
+
+	        if (clock_adjtime(clkid, &tx) < 0) {
+        	        pr_notice("failed to adjust the clock: %m");
+        	}
+
 		if (clock_poll(clock))
 			break;
 	}
