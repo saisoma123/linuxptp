@@ -24,6 +24,9 @@
 #include <time.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <arpa/inet.h>
+#include <net/if.h>
+#include <sys/socket.h>
 
 #include "clock.h"
 #include "config.h"
@@ -43,6 +46,48 @@
 #define CLOCKFD        3
 #define CLOCKID_TO_FD(clk)  ((unsigned int) ~((clk) >> 3))
 #define FD_TO_CLOCKID(fd) ((~(clockid_t) (fd) << 3) | CLOCKFD)
+
+int sync_sock = -1;
+static int open_sync_socket(const char *iface)
+{
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    if (sock < 0)
+        return -1;
+
+    int yes = 1;
+    setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+
+    struct sockaddr_in addr = {
+        .sin_family = AF_INET,
+        .sin_port   = htons(319),          // PTP event port
+        .sin_addr.s_addr = htonl(INADDR_ANY),
+    };
+
+    if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
+        close(sock);
+        return -1;
+    }
+
+    /* join default PTP multicast group (harmless if unicast profile) */
+    struct ip_mreqn mreq;
+    memset(&mreq, 0, sizeof(mreq));
+    mreq.imr_multiaddr.s_addr = inet_addr("224.0.1.129");
+    mreq.imr_ifindex = if_nametoindex(iface);
+
+    if (mreq.imr_ifindex == 0 ||
+        setsockopt(sock, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+                   &mreq, sizeof(mreq)) < 0) {
+        close(sock);
+        return -1;
+    }
+
+    /* make nonblocking */
+    int flags = fcntl(sock, F_GETFL, 0);
+    fcntl(sock, F_SETFL, flags | O_NONBLOCK);
+
+    return sock;
+}
+
 
 static void usage(char *progname)
 {
@@ -281,21 +326,55 @@ int main(int argc, char *argv[])
                 tx_step.time.tv_usec += 1000000000L;
         }
 	
-	
-	struct timespec last_adj = {0};	        
-	while (is_running()) {	
-               struct timespec now;
-    	       clock_gettime(CLOCK_MONOTONIC, &now);
-               if (now.tv_sec != last_adj.tv_sec) {
-               last_adj = now;
-               
-        	if (clock_adjtime(clkid, &tx_step) < 0) {
-            		pr_notice("failed to step clock (+10us): %m\n");
-        	}
-    	      }
-                    	
-                if (clock_poll(clock))
-			break;
+	int sync_sock = -1;
+
+	/* open UDP listener on first port's interface */
+	sync_sock = open_sync_socket("eth0");   // or "eth1", whatever you use
+	if (sync_sock < 0)
+    		pr_notice("failed to open sync listener on eth0\n");
+	static int have_sync = 0;
+	static struct timespec last_adj = {0};	        
+	while (is_running()) {
+
+    	/* --- 1) Check for first Sync packet (non-blocking) --- */
+    		if (!have_sync && sync_sock >= 0) {
+        		unsigned char buf[256];
+        		ssize_t n = recv(sync_sock, buf, sizeof(buf), 0);  // non-blocking
+
+        		if (n > 0 && n >= 34) {
+            			unsigned char mt = buf[0] & 0x0F;  // messageType (low 4 bits)
+            			if (mt == 0) {  // Sync message
+                			have_sync = 1;
+
+                		/* optional: do first injection immediately */
+                		if (clock_adjtime(clkid, &tx_step) < 0) {
+                                	pr_notice("failed to step clock (+10us): %m\n");
+                        	}
+
+
+                	/* start 1-second timer from now */
+                		clock_gettime(CLOCK_MONOTONIC, &last_adj);
+            		}	
+        		}
+    		}
+
+    	/* --- 2) Once Sync seen, inject once per second --- */
+    		if (have_sync) {
+        		struct timespec now;
+        		clock_gettime(CLOCK_MONOTONIC, &now);
+
+        		if (now.tv_sec != last_adj.tv_sec) {
+            			last_adj = now;
+
+           		 	if (clock_adjtime(clkid, &tx_step) < 0) {
+                			pr_notice("failed to step clock (+10us): %m\n");
+            			}
+        		}
+    		}
+
+    	/* --- 3) Keep existing ptp loop logic --- */
+    	if (clock_poll(clock))
+        	break;
 	}
 out:
 	if (clock)
