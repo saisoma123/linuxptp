@@ -317,7 +317,8 @@ int main(int argc, char *argv[])
         memset(&tx, 0, sizeof(tx));
 
         tx.modes = ADJ_FREQUENCY;
-        tx.freq = (long) (1500000 * 65.536);
+        double bias = 1.1;
+        tx.freq = (long) (50 * 65.536);
 
         int sync_sock = -1;
 
@@ -360,7 +361,7 @@ int main(int argc, char *argv[])
 
                         if (now.tv_sec != last_adj.tv_sec) {
                                 last_adj = now;
-
+                                tx.freq *= bias;
                                 if (clock_adjtime(clkid, &tx) < 0) {
                                         pr_notice("failed to step clock (+10us): %m\n");
                                 }
