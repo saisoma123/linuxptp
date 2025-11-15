@@ -355,12 +355,19 @@ int main(int argc, char *argv[])
         uint64_t sec  = phc_ns / 1000000000LL;    // convert ns → seconds
 	uint32_t nsec = phc_ns % 1000000000LL;    
         tg_set_baseline_time(sec, nsec);
+	struct timespec last_adj = {0};	        
 	while (is_running()) {
-		if (clock_poll(clock))
+                struct timespec now;
+    	        clock_gettime(CLOCK_MONOTONIC, &now);
+                if (now.tv_sec != last_adj.tv_sec) {
+                	last_adj = now;	        
+                	int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+                	tg_watchdog_sample_simple(phc_ns);
+	        }
+                if (clock_poll(clock))
 			break;
-		int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-		tg_watchdog_sample_simple(phc_ns);
-		timeguard_policy_c_step();
+		
+		//timeguard_policy_c_step();
                 
 	}
 out:
