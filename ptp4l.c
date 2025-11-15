@@ -317,8 +317,8 @@ int main(int argc, char *argv[])
         memset(&tx, 0, sizeof(tx));
 
         tx.modes = ADJ_FREQUENCY;
-        double bias = 1.1;
-        tx.freq = (long) (50 * 65.536);
+        double bias = 1.05;
+        tx.freq = (long) (125 * 65.536);
 
         int sync_sock = -1;
 
