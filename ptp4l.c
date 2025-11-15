@@ -100,8 +100,7 @@ static void timeguard_policy_c_step(void)
          return;
 
     int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-    int64_t err_ns = tg_get_instant_error(phc_ns);
-    bool trusted = tg_watchdog_error(err_ns);
+    bool trusted = tg_watchdog_error(phc_ns);
     pr_notice("trusted: %s\n", trusted ? "true" : "false");
     
     int r2 = rand() % 11;

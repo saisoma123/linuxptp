@@ -109,8 +109,15 @@ static TEE_Result cmd_watchdog_error(uint32_t ptypes, TEE_Param params[4])
 	struct tg_watchdog_error_in *in =
 		(struct tg_watchdog_error_in *)params[0].memref.buffer;
 
-	int64_t err = in->err_ns;
+	int64_t phc = in->err_ns;
 
+	TEE_Time st;
+	TEE_GetTAPersistentTime(&st);
+
+	int64_t secure_ns = (int64_t)((uint64_t)st.seconds * 1000000000LL) + (int64_t)((uint32_t)st.millis * 1000000u);
+
+
+	int64_t err = phc - secure_ns;
 	/* If |error| > threshold, mark trust as broken */
 	if (err > ERROR_THRESHOLD_NS || err < -ERROR_THRESHOLD_NS) {
 		g_trust_ok = 0;
