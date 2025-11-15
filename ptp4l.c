@@ -49,7 +49,7 @@ static int CALLS = 0;
 static inline int32_t sample_uniform_ppb_bound(void)
 {
     if (RANDOM_PPB <= 0) return 0;
-    return (int32_t)(rand() % (2 * RANDOM_PPB + 1)) - RANDOM_PPB;
+    return (int32_t)(rand() * (RANDOM_PPB + 1));
 }
 
 
@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
 		        CALLS += 1;
 
 		
-			tx.freq = (long) freq;
+			tx.freq = (long) freq * 65.536;
                 	if (clock_adjtime(clkid, &tx) < 0) {
                         	pr_notice("failed to adjust the clock: %m");
                 	}
