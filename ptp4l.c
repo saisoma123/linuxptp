@@ -44,7 +44,7 @@
 #include <linux/ptp_clock.h>
 
 #define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
-
+static clockid_t id;
 static void timeguard_init(void)
 {
 	uint8_t dev_secret[32] = {0}; 
@@ -64,7 +64,7 @@ static int64_t phc_get_time_ns(const char *ptp_path)
         return 0;   // or any sentinel you want
 
     clockid_t clkid = FD_TO_CLOCKID(fd);
-
+		id = clkid;
     struct timespec ts;
     if (clock_gettime(clkid, &ts) < 0) {
         close(fd);
@@ -100,9 +100,28 @@ static void timeguard_policy_c_step(void)
          return;
 
     int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-    bool trusted = tg_watchdog_error(phc_ns);
-    pr_notice("trusted: %s\n", trusted ? "true" : "false");
-    
+
+		struct tg_watchdog_error_out err_out;
+    bool trusted = tg_watchdog_error(phc_ns, &err_out);
+    // pr_notice("trusted: %s\n", trusted ? "true" : "false");
+    if(!trusted) {
+			struct timex tx_step;
+			memset(&tx_step, 0, sizeof(tx_step));
+
+			tx_step.modes = ADJ_SETOFFSET | ADJ_NANO;
+
+			/* Relative step of +10   s. In ADJ_NANO, tv_usec is nanoseconds. */
+			tx_step.time.tv_sec  = err_out.seconds;
+			tx_step.time.tv_usec = err_out.nanoseconds;   /* 10   s = 10,000 ns */
+
+			if (tx_step.time.tv_usec < 0) {
+							tx_step.time.tv_sec  -= 1;
+							tx_step.time.tv_usec += 1000000000L;
+			}
+      if (clock_adjtime(id, &tx_step) < 0) {
+              pr_notice("Correction step failed");
+      }
+		}
     int r2 = rand() % 11;
     next_inspect_time = now_ns + r2 * slot;
 }

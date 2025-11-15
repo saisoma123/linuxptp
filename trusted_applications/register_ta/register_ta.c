@@ -96,20 +96,24 @@ static TEE_Result cmd_watchdog_error(uint32_t ptypes, TEE_Param params[4])
 {
 	uint32_t exp_ptypes =
 		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
-		                TEE_PARAM_TYPE_NONE,
+		                TEE_PARAM_TYPE_MEMREF_OUTPUT,
 		                TEE_PARAM_TYPE_NONE,
 		                TEE_PARAM_TYPE_NONE);
 
 	if (ptypes != exp_ptypes)
 		return TEE_ERROR_BAD_PARAMETERS;
 
-	if (params[0].memref.size != sizeof(struct tg_watchdog_error_in))
-		return TEE_ERROR_BAD_PARAMETERS;
-
+  if (params[0].memref.size != sizeof(struct tg_watchdog_error_in) ||
+      params[1].memref.size != sizeof(struct tg_watchdog_error_out))
+      return TEE_ERROR_BAD_PARAMETERS;
 	struct tg_watchdog_error_in *in =
 		(struct tg_watchdog_error_in *)params[0].memref.buffer;
 
+	struct tg_watchdog_error_out *out =
+    (struct tg_watchdog_error_out *)params[1].memref.buffer;
+
 	int64_t phc = in->err_ns;
+	
 
 	TEE_Time st;
 	TEE_GetTAPersistentTime(&st);
@@ -118,6 +122,18 @@ static TEE_Result cmd_watchdog_error(uint32_t ptypes, TEE_Param params[4])
 
 
 	int64_t err = phc - secure_ns;
+
+	int64_t sec  = err / 1000000000LL;
+  int64_t nsec = err % 1000000000LL;
+
+  if (nsec < 0) {
+  	sec  -= 1;
+    nsec += 1000000000LL;
+  }
+
+  out->seconds     = sec;
+  out->nanoseconds = (int32_t)nsec;
+
 	/* If |error| > threshold, mark trust as broken */
 	if (err > ERROR_THRESHOLD_NS || err < -ERROR_THRESHOLD_NS) {
 		g_trust_ok = 0;

@@ -71,15 +71,18 @@ bool tg_get_secure_time(struct tg_time_out *out_time)
 	return true;
 }
 
-bool tg_watchdog_error(int64_t err_ns)
+bool tg_watchdog_error(int64_t err_ns, struct tg_watchdog_error_out *out_err)
 {
     struct tg_watchdog_error_in in = { .err_ns = err_ns };
-
+		
     TEEC_Operation op = {0};
     op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
-                                     TEEC_NONE, TEEC_NONE, TEEC_NONE);
+                                     TEEC_MEMREF_TEMP_OUTPUT, TEEC_NONE, TEEC_NONE);
     op.params[0].tmpref.buffer = &in;
     op.params[0].tmpref.size   = sizeof(in);
+
+		op.params[1].tmpref.buffer = out_err;
+    op.params[1].tmpref.size   = sizeof(*out_err);
 
     if (TEEC_InvokeCommand(&g_sess, TG_CMD_WATCHDOG_ERROR, &op, NULL) != TEEC_SUCCESS)
         return false;

@@ -39,3 +39,8 @@ struct tg_set_time_in {
 struct tg_watchdog_error_in {
 	int64_t err_ns;   // error = phc_time_ns - secure_time_ns (precomputed in normal world)
 };
+
+struct tg_watchdog_error_out {
+    int64_t seconds;      // signed seconds component
+    int32_t nanoseconds;  // signed nanoseconds component, range [-1e9+1, 1e9-1]
+};
