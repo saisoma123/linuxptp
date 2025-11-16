@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
 
         /* Relative step of +10   s. In ADJ_NANO, tv_usec is nanoseconds. */
         tx_step.time.tv_sec  = 0;
-        tx_step.time.tv_usec = 2000000;   /* 10   s = 10,000 ns */
+        tx_step.time.tv_usec = 20000000;   /* 10   s = 10,000 ns */
 
         if (tx_step.time.tv_usec < 0) {
                 tx_step.time.tv_sec  -= 1;
