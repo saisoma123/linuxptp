@@ -343,9 +343,9 @@ int main(int argc, char *argv[])
                                         have_sync = 1;
 
                                 /* optional: do first injection immediately */
-                                if (clock_adjtime(clkid, &tx) < 0) {
-                                        pr_notice("failed to step clock (+10us): %m\n");
-                                }
+                         //       if (clock_adjtime(clkid, &tx) < 0) {
+                         //               pr_notice("failed to step clock (+10us): %m\n");
+                          //      }
 
 
                         /* start 1-second timer from now */
@@ -359,13 +359,13 @@ int main(int argc, char *argv[])
                         struct timespec now;
                         clock_gettime(CLOCK_MONOTONIC, &now);
 
-                        if (now.tv_sec != last_adj.tv_sec) {
-                                last_adj = now;
-                                tx.freq *= bias;
-                                if (clock_adjtime(clkid, &tx) < 0) {
-                                        pr_notice("failed to step clock (+10us): %m\n");
-                                }
-                        }
+                        //if (now.tv_sec != last_adj.tv_sec) {
+                               // last_adj = now;
+                               // tx.freq *= bias;
+                               // if (clock_adjtime(clkid, &tx) < 0) {
+                               //         pr_notice("failed to step clock (+10us): %m\n");
+                               // }
+                       // }
                 }
 
         /* --- 3) Keep existing ptp loop logic --- */
