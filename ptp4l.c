@@ -42,6 +42,16 @@
 #include <unistd.h>
 #include <fcntl.h>          
 #include <linux/ptp_clock.h>
+#include <sched.h>   /* for sched_getcpu() */
+
+/* Helper: get current core ID (fallback to 0 on error) */
+static int32_t tg_get_current_core_id(void)
+{
+    int cpu = sched_getcpu();
+    if (cpu < 0)
+        return 0;
+    return (int32_t)cpu;
+}
 
 #define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
 static clockid_t id;
@@ -75,6 +85,100 @@ static int64_t phc_get_time_ns(const char *ptp_path)
 
     return (int64_t)ts.tv_sec * 1000000000LL + (int64_t)ts.tv_nsec;
 }
+
+/* Helper: get current core ID (fallback to 0 on error) */
+static int32_t tg_get_current_core_id(void)
+{
+    int cpu = sched_getcpu();
+    if (cpu < 0)
+        return 0;
+    return (int32_t)cpu;
+}
+
+/* Helper: apply a relative offset in nanoseconds using clock_adjtime() */
+static void tg_apply_step(int64_t base_diff_ns, clockid_t id)
+{
+    struct timespec ts;
+    ts.tv_sec  = base_diff_ns / 1000000000LL;
+    ts.tv_nsec = base_diff_ns % 1000000000LL;
+
+    if (ts.tv_nsec < 0) {
+        ts.tv_sec  -= 1;
+        ts.tv_nsec += 1000000000L;
+    }
+
+    struct timex tx_step;
+    memset(&tx_step, 0, sizeof(tx_step));
+
+    tx_step.modes        = ADJ_SETOFFSET | ADJ_NANO;
+    tx_step.time.tv_sec  = ts.tv_sec;
+    tx_step.time.tv_usec = ts.tv_nsec;
+
+    if (clock_adjtime(id, &tx_step) < 0)
+        pr_notice("TimeGuard: correction step failed\n");
+}
+
+/* --------- MRU policy --------- */
+
+static void timeguard_mru_passive_step(clockid_t id)
+{
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+    int32_t core_id = tg_get_current_core_id();
+
+    struct tg_passive_policy_out err_out;
+    bool trusted = tg_passive_mru((uint64_t)phc_ns, core_id, &err_out);
+
+    // pr_notice("MRU trusted: %s\n", trusted ? "true" : "false");
+
+    tg_apply_step(err_out.base_diff_ns, id);
+}
+
+/* --------- RANDOM policy --------- */
+
+static void timeguard_random_passive_step(clockid_t id)
+{
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+    int32_t core_id = tg_get_current_core_id();
+
+    struct tg_passive_policy_out err_out;
+    bool trusted = tg_passive_random((uint64_t)phc_ns, core_id, &err_out);
+
+    // pr_notice("Random trusted: %s\n", trusted ? "true" : "false");
+
+    tg_apply_step(err_out.base_diff_ns, id);
+}
+
+/* --------- FREQ policy (fixed to pass core_id) --------- */
+
+static void timeguard_freq_passive_step(clockid_t id)
+{
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+    int32_t core_id = tg_get_current_core_id();
+
+    struct tg_passive_policy_out err_out;
+    bool trusted = tg_passive_freq((uint64_t)phc_ns, core_id, &err_out);
+
+    // pr_notice("Freq trusted: %s\n", trusted ? "true" : "false");
+
+
+    tg_apply_step(err_out.base_diff_ns, id);
+}
+
+/* --------- SCHEDTRACE policy --------- */
+
+static void timeguard_schedtrace_passive_step(clockid_t id)
+{
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+    int32_t core_id = tg_get_current_core_id();
+
+    struct tg_passive_policy_out err_out;
+    bool trusted = tg_passive_schedtrace((uint64_t)phc_ns, core_id, &err_out);
+
+    // pr_notice("SchedTrace trusted: %s\n", trusted ? "true" : "false");
+
+    tg_apply_step(err_out.base_diff_ns, id);
+}
+
 
 
 static void timeguard_policy_c_step(void)

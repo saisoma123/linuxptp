@@ -115,3 +115,116 @@ bool tg_set_baseline_time(uint64_t sec, uint32_t nsec)
 
 
 uint64_t tg_proxy_id(void) { return g_proxy_id; }
+
+
+bool tg_passive_mru(uint64_t phc_ns, int32_t core_id,
+                    struct tg_passive_policy_out *out)
+{
+    if (!out)
+        return false;
+
+    struct tg_passive_policy_in in = {
+        .phc_ns  = phc_ns,
+        .core_id = core_id,
+    };
+
+    TEEC_Operation op = (TEEC_Operation){0};
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_MEMREF_TEMP_OUTPUT,
+                                     TEEC_NONE, TEEC_NONE);
+
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+
+    op.params[1].tmpref.buffer = out;
+    op.params[1].tmpref.size   = sizeof(*out);
+
+    TEEC_Result r = TEEC_InvokeCommand(&g_sess,
+                                       TG_CMD_PASSIVE_MRU,
+                                       &op, NULL);
+    return r == TEEC_SUCCESS;
+}
+
+bool tg_passive_random(uint64_t phc_ns, int32_t core_id,
+                       struct tg_passive_policy_out *out)
+{
+    if (!out)
+        return false;
+
+    struct tg_passive_policy_in in = {
+        .phc_ns  = phc_ns,
+        .core_id = core_id,
+    };
+
+    TEEC_Operation op = (TEEC_Operation){0};
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_MEMREF_TEMP_OUTPUT,
+                                     TEEC_NONE, TEEC_NONE);
+
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+
+    op.params[1].tmpref.buffer = out;
+    op.params[1].tmpref.size   = sizeof(*out);
+
+    TEEC_Result r = TEEC_InvokeCommand(&g_sess,
+                                       TG_CMD_PASSIVE_RANDOM,
+                                       &op, NULL);
+    return r == TEEC_SUCCESS;
+}
+
+bool tg_passive_freq(uint64_t phc_ns, int32_t core_id,
+                     struct tg_passive_policy_out *out)
+{
+    if (!out)
+        return false;
+
+    struct tg_passive_policy_in in = {
+        .phc_ns  = phc_ns,
+        .core_id = core_id,
+    };
+
+    TEEC_Operation op = (TEEC_Operation){0};
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_MEMREF_TEMP_OUTPUT,
+                                     TEEC_NONE, TEEC_NONE);
+
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+
+    op.params[1].tmpref.buffer = out;
+    op.params[1].tmpref.size   = sizeof(*out);
+
+    TEEC_Result r = TEEC_InvokeCommand(&g_sess,
+                                       TG_CMD_PASSIVE_FREQ,
+                                       &op, NULL);
+    return r == TEEC_SUCCESS;
+}
+
+bool tg_passive_schedtrace(uint64_t phc_ns, int32_t core_id,
+                           struct tg_passive_policy_out *out)
+{
+    if (!out)
+        return false;
+
+    struct tg_passive_policy_in in = {
+        .phc_ns  = phc_ns,
+        .core_id = core_id,
+    };
+
+    TEEC_Operation op = (TEEC_Operation){0};
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_MEMREF_TEMP_OUTPUT,
+                                     TEEC_NONE, TEEC_NONE);
+
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+
+    op.params[1].tmpref.buffer = out;
+    op.params[1].tmpref.size   = sizeof(*out);
+
+    TEEC_Result r = TEEC_InvokeCommand(&g_sess,
+                                       TG_CMD_PASSIVE_SCHEDTRACE,
+                                       &op, NULL);
+    return r == TEEC_SUCCESS;
+}

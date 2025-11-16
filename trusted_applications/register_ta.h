@@ -11,6 +11,11 @@ enum {
 	TG_CMD_GET_SECURE_TIME = 0x0003,  // out: secure time
 	TG_CMD_WATCHDOG_ERROR  = 0x0004,
 	TG_CMD_SET_TIME  = 0x0005,
+  TG_CMD_PASSIVE_MRU     =       0x0006,
+  TG_CMD_PASSIVE_RANDOM   =     0x0007,
+  TG_CMD_PASSIVE_FREQ      =    0x0008,
+  TG_CMD_PASSIVE_SCHEDTRACE =   0x0009,
+
 };
 
 struct tg_register_in {
@@ -43,4 +48,15 @@ struct tg_watchdog_error_in {
 struct tg_watchdog_error_out {
     int64_t seconds;      // signed seconds component
     int32_t nanoseconds;  // signed nanoseconds component, range [-1e9+1, 1e9-1]
+};
+
+/* Passive mode policy input: sent from PTP client → TA */
+struct tg_passive_policy_in {
+    int64_t phc_ns;   /* PHC time in ns */
+    int32_t core_id;  /* CPU core where client is running */
+};
+
+/* Passive mode policy output: TA → client */
+struct tg_passive_policy_out {
+    int64_t base_diff_ns;  /* corrected (phc - secure_adj) in ns */
 };
