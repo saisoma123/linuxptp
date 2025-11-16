@@ -21,6 +21,11 @@
 
 #define TA_BMCA_CMD_PING 0x00000003
 
+#define TA_BMCA_CMD_PTP_FSM         0x00000004
+
+#define TA_BMCA_CMD_PTP_SLAVE_FSM   0x00000005
+
+
 /* -------- Wire structs (must match on host & TA) -------- */
 struct BmcaClockQuality
 {
@@ -78,6 +83,19 @@ struct BmcaInput
 struct BmcaOutput
 {
     uint8_t decided_state; /* enum port_state value */
+} __attribute__((packed));
+
+
+struct BmcaFsmInput
+{
+    uint8_t state;  /* enum port_state (cast to uint8_t) */
+    uint8_t event;  /* enum fsm_event (cast to uint8_t) */
+    int32_t mdiff;  /* same semantics as fsm.c mdiff argument */
+} __attribute__((packed));
+
+struct BmcaFsmOutput
+{
+    uint8_t next_state; /* enum port_state value */
 } __attribute__((packed));
 
 #endif /* BMCA_TA_H */

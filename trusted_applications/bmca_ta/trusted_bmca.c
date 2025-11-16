@@ -13,6 +13,7 @@
 
 #include "bmca_ta.h"
 #include <trace.h>
+#include "fsm.h"
 
 /* =========================
  * Enum values – ADJUST THESE
@@ -228,6 +229,330 @@ static uint8_t bmca_decide(const struct BmcaInput *in)
 		return PS_MASTER; /* M3 */
 }
 
+
+static uint8_t ta_run_ptp_fsm(const struct BmcaFsmInput *in)
+{
+    enum port_state state = (enum port_state)in->state;
+    enum fsm_event  ev    = (enum fsm_event)in->event;
+    int             mdiff = (int)in->mdiff;
+
+    enum port_state next = state;
+		if (EV_INITIALIZE == event || EV_POWERUP == event)
+		return PS_INITIALIZING;
+
+	switch (state) {
+	case PS_INITIALIZING:
+		switch (event) {
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_INIT_COMPLETE:
+			next = PS_LISTENING;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_FAULTY:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_CLEARED:
+			next = PS_INITIALIZING;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_DISABLED:
+		if (EV_DESIGNATED_ENABLED == event)
+			next = PS_INITIALIZING;
+		break;
+
+	case PS_LISTENING:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+			next = PS_MASTER;
+			break;
+		case EV_RS_MASTER:
+			next = PS_PRE_MASTER;
+			break;
+		case EV_RS_GRAND_MASTER:
+			next = PS_GRAND_MASTER;
+			break;
+		case EV_RS_SLAVE:
+			next = PS_UNCALIBRATED;
+			break;
+		case EV_RS_PASSIVE:
+			next = PS_PASSIVE;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_PRE_MASTER:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_QUALIFICATION_TIMEOUT_EXPIRES:
+			next = PS_MASTER;
+			break;
+		case EV_RS_SLAVE:
+			next = PS_UNCALIBRATED;
+			break;
+		case EV_RS_PASSIVE:
+			next = PS_PASSIVE;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_MASTER:
+	case PS_GRAND_MASTER:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_RS_SLAVE:
+			next = PS_UNCALIBRATED;
+			break;
+		case EV_RS_PASSIVE:
+			next = PS_PASSIVE;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_PASSIVE:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+			next = PS_MASTER;
+			break;
+		case EV_RS_MASTER:
+			next = PS_PRE_MASTER;
+			break;
+		case EV_RS_GRAND_MASTER:
+			next = PS_GRAND_MASTER;
+			break;
+		case EV_RS_SLAVE:
+			next = PS_UNCALIBRATED;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_UNCALIBRATED:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+			next = PS_MASTER;
+			break;
+		case EV_MASTER_CLOCK_SELECTED:
+			next = PS_SLAVE;
+			break;
+		case EV_RS_MASTER:
+			next = PS_PRE_MASTER;
+			break;
+		case EV_RS_GRAND_MASTER:
+			next = PS_GRAND_MASTER;
+			break;
+		case EV_RS_SLAVE:
+			next = PS_UNCALIBRATED;
+			break;
+		case EV_RS_PASSIVE:
+			next = PS_PASSIVE;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_SLAVE:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+			next = PS_MASTER;
+			break;
+		case EV_SYNCHRONIZATION_FAULT:
+			next = PS_UNCALIBRATED;
+			break;
+		case EV_RS_MASTER:
+			next = PS_PRE_MASTER;
+			break;
+		case EV_RS_GRAND_MASTER:
+			next = PS_GRAND_MASTER;
+			break;
+		case EV_RS_SLAVE:
+			if (mdiff)
+				next = PS_UNCALIBRATED;
+			break;
+		case EV_RS_PASSIVE:
+			next = PS_PASSIVE;
+			break;
+		default:
+			break;
+		}
+		break;
+	}
+
+    return (uint8_t)next;
+}
+
+static uint8_t ta_run_ptp_slave_fsm(const struct BmcaFsmInput *in)
+{
+    enum port_state state = (enum port_state)in->state;
+    enum fsm_event  ev    = (enum fsm_event)in->event;
+    int             mdiff = (int)in->mdiff;
+
+    enum port_state next = state;
+		if (EV_INITIALIZE == event || EV_POWERUP == event)
+		return PS_INITIALIZING;
+
+	switch (state) {
+	case PS_INITIALIZING:
+		switch (event) {
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_INIT_COMPLETE:
+			next = PS_LISTENING;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_FAULTY:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_CLEARED:
+			next = PS_INITIALIZING;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_DISABLED:
+		if (EV_DESIGNATED_ENABLED == event)
+			next = PS_INITIALIZING;
+		break;
+
+	case PS_LISTENING:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+		case EV_RS_MASTER:
+		case EV_RS_GRAND_MASTER:
+		case EV_RS_PASSIVE:
+			next = PS_LISTENING;
+			break;
+		case EV_RS_SLAVE:
+			next = PS_UNCALIBRATED;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_UNCALIBRATED:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+		case EV_RS_MASTER:
+		case EV_RS_GRAND_MASTER:
+		case EV_RS_PASSIVE:
+			next = PS_LISTENING;
+			break;
+		case EV_MASTER_CLOCK_SELECTED:
+			next = PS_SLAVE;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	case PS_SLAVE:
+		switch (event) {
+		case EV_DESIGNATED_DISABLED:
+			next = PS_DISABLED;
+			break;
+		case EV_FAULT_DETECTED:
+			next = PS_FAULTY;
+			break;
+		case EV_ANNOUNCE_RECEIPT_TIMEOUT_EXPIRES:
+		case EV_RS_MASTER:
+		case EV_RS_GRAND_MASTER:
+		case EV_RS_PASSIVE:
+			next = PS_LISTENING;
+			break;
+		case EV_SYNCHRONIZATION_FAULT:
+			next = PS_UNCALIBRATED;
+			break;
+		case EV_RS_SLAVE:
+			if (mdiff)
+				next = PS_UNCALIBRATED;
+			break;
+		default:
+			break;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+    return (uint8_t)next;
+}
+
 /* =========================
  * TA Entry Points
  * ========================= */
@@ -332,6 +657,70 @@ TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx __unused,
 		params[0].value.a = 0xBAAA; /* magic */
 		return TEE_SUCCESS;
 	}
+
+	case TA_BMCA_CMD_PTP_FSM:
+    {
+        uint32_t exp = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+                                       TEE_PARAM_TYPE_MEMREF_OUTPUT,
+                                       TEE_PARAM_TYPE_NONE,
+                                       TEE_PARAM_TYPE_NONE);
+        if (param_types != exp)
+            return TEE_ERROR_BAD_PARAMETERS;
+
+        if (!params[0].memref.buffer || !params[1].memref.buffer)
+            return TEE_ERROR_BAD_PARAMETERS;
+
+        if (params[0].memref.size < sizeof(struct BmcaFsmInput) ||
+            params[1].memref.size < sizeof(struct BmcaFsmOutput))
+            return TEE_ERROR_SHORT_BUFFER;
+
+        const struct BmcaFsmInput *in =
+            (const struct BmcaFsmInput *)params[0].memref.buffer;
+        struct BmcaFsmOutput *out =
+            (struct BmcaFsmOutput *)params[1].memref.buffer;
+
+        TEE_MemFill(out, 0, params[1].memref.size);
+
+        out->next_state = ta_run_ptp_fsm(in);
+        params[1].memref.size = sizeof(struct BmcaFsmOutput);
+
+        IMSG("BMCA TA PTP_FSM ran (state=%u ev=%u mdiff=%d -> next=%u)",
+             in->state, in->event, in->mdiff, out->next_state);
+
+        return TEE_SUCCESS;
+    }
+
+    case TA_BMCA_CMD_PTP_SLAVE_FSM:
+    {
+        uint32_t exp = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+                                       TEE_PARAM_TYPE_MEMREF_OUTPUT,
+                                       TEE_PARAM_TYPE_NONE,
+                                       TEE_PARAM_TYPE_NONE);
+        if (param_types != exp)
+            return TEE_ERROR_BAD_PARAMETERS;
+
+        if (!params[0].memref.buffer || !params[1].memref.buffer)
+            return TEE_ERROR_BAD_PARAMETERS;
+
+        if (params[0].memref.size < sizeof(struct BmcaFsmInput) ||
+            params[1].memref.size < sizeof(struct BmcaFsmOutput))
+            return TEE_ERROR_SHORT_BUFFER;
+
+        const struct BmcaFsmInput *in =
+            (const struct BmcaFsmInput *)params[0].memref.buffer;
+        struct BmcaFsmOutput *out =
+            (struct BmcaFsmOutput *)params[1].memref.buffer;
+
+        TEE_MemFill(out, 0, params[1].memref.size);
+
+        out->next_state = ta_run_ptp_slave_fsm(in);
+        params[1].memref.size = sizeof(struct BmcaFsmOutput);
+
+        IMSG("BMCA TA PTP_SLAVE_FSM ran (state=%u ev=%u mdiff=%d -> next=%u)",
+             in->state, in->event, in->mdiff, out->next_state);
+
+        return TEE_SUCCESS;
+    }
 
 	default:
 		return TEE_ERROR_NOT_SUPPORTED;

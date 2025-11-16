@@ -3554,6 +3554,142 @@ err:
 	msg_put(msg);
 }
 
+static int tee_ptp_fsm(enum port_state state,
+                       enum fsm_event event,
+                       int mdiff,
+                       enum port_state *next_state_out)
+{
+    TEEC_Context ctx;
+    TEEC_Session sess;
+    TEEC_Operation op;
+    TEEC_Result res;
+    TEEC_UUID uuid = TA_BMCA_UUID;
+    uint32_t err_origin;
+
+    struct BmcaFsmInput in;
+    struct BmcaFsmOutput out;
+
+    memset(&in, 0, sizeof(in));
+    in.state = (uint8_t)state;
+    in.event = (uint8_t)event;
+    in.mdiff = (int32_t)mdiff;
+
+    res = TEEC_InitializeContext(NULL, &ctx);
+    if (res != TEEC_SUCCESS) {
+        pr_notice("TEE FSM: InitializeContext failed 0x%x\n", res);
+        return 0;
+    }
+
+    res = TEEC_OpenSession(&ctx, &sess, &uuid,
+                           TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+    if (res != TEEC_SUCCESS) {
+        pr_notice("TEE FSM: OpenSession failed 0x%x origin 0x%x\n",
+                  res, err_origin);
+        TEEC_FinalizeContext(&ctx);
+        return 0;
+    }
+
+    memset(&op, 0, sizeof(op));
+    memset(&out, 0, sizeof(out));
+
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_MEMREF_TEMP_OUTPUT,
+                                     TEEC_NONE, TEEC_NONE);
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+    op.params[1].tmpref.buffer = &out;
+    op.params[1].tmpref.size   = sizeof(out);
+
+    res = TEEC_InvokeCommand(&sess, TA_BMCA_CMD_PTP_FSM, &op, &err_origin);
+    pr_notice("TEE FSM: InvokeCommand returned 0x%x\n", res);
+
+    TEEC_CloseSession(&sess);
+    TEEC_FinalizeContext(&ctx);
+
+    if (res != TEEC_SUCCESS) {
+        pr_notice("TEE FSM: PTP_FSM failed 0x%x origin 0x%x\n",
+                  res, err_origin);
+        return 0;
+    }
+
+    if (next_state_out)
+        *next_state_out = (enum port_state)out.next_state;
+
+    pr_notice("TEE FSM: state=%u ev=%u mdiff=%d -> next=%u\n",
+              in.state, in.event, in.mdiff, out.next_state);
+
+    return 1;
+}
+
+static int tee_ptp_slave_fsm(enum port_state state,
+                             enum fsm_event event,
+                             int mdiff,
+                             enum port_state *next_state_out)
+{
+    TEEC_Context ctx;
+    TEEC_Session sess;
+    TEEC_Operation op;
+    TEEC_Result res;
+    TEEC_UUID uuid = TA_BMCA_UUID;
+    uint32_t err_origin;
+
+    struct BmcaFsmInput in;
+    struct BmcaFsmOutput out;
+
+    memset(&in, 0, sizeof(in));
+    in.state = (uint8_t)state;
+    in.event = (uint8_t)event;
+    in.mdiff = (int32_t)mdiff;
+
+    res = TEEC_InitializeContext(NULL, &ctx);
+    if (res != TEEC_SUCCESS) {
+        pr_notice("TEE FSM: InitializeContext failed 0x%x\n", res);
+        return 0;
+    }
+
+    res = TEEC_OpenSession(&ctx, &sess, &uuid,
+                           TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+    if (res != TEEC_SUCCESS) {
+        pr_notice("TEE FSM: OpenSession failed 0x%x origin 0x%x\n",
+                  res, err_origin);
+        TEEC_FinalizeContext(&ctx);
+        return 0;
+    }
+
+    memset(&op, 0, sizeof(op));
+    memset(&out, 0, sizeof(out));
+
+    op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_INPUT,
+                                     TEEC_MEMREF_TEMP_OUTPUT,
+                                     TEEC_NONE, TEEC_NONE);
+    op.params[0].tmpref.buffer = &in;
+    op.params[0].tmpref.size   = sizeof(in);
+    op.params[1].tmpref.buffer = &out;
+    op.params[1].tmpref.size   = sizeof(out);
+
+    res = TEEC_InvokeCommand(&sess, TA_BMCA_CMD_PTP_SLAVE_FSM, &op, &err_origin);
+    pr_notice("TEE FSM: InvokeCommand returned 0x%x\n", res);
+
+    TEEC_CloseSession(&sess);
+    TEEC_FinalizeContext(&ctx);
+
+    if (res != TEEC_SUCCESS) {
+        pr_notice("TEE FSM: PTP_SLAVE_FSM failed 0x%x origin 0x%x\n",
+                  res, err_origin);
+        return 0;
+    }
+
+    if (next_state_out)
+        *next_state_out = (enum port_state)out.next_state;
+
+    pr_notice("TEE FSM: (slave) state=%u ev=%u mdiff=%d -> next=%u\n",
+              in.state, in.event, in.mdiff, out.next_state);
+
+    return 1;
+}
+
+
+
 struct port *port_open(const char *phc_device,
 		       int phc_index,
 		       enum timestamp_type timestamping,
@@ -3619,7 +3755,7 @@ struct port *port_open(const char *phc_device,
 			goto err_transport;
 		}
 	} else {
-		p->state_machine = clock_slave_only(clock) ? ptp_slave_fsm : ptp_fsm;
+		p->state_machine = clock_slave_only(clock) ? tee_ptp_slave_fsm : tee_ptp_fsm;
 	}
 
 	if (port_is_uds(p)) {
