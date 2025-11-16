@@ -43,6 +43,8 @@ enum clock_type {
 	CLOCK_TYPE_MANAGEMENT = 0x0800,
 };
 
+int64_t get_master_offset(struct clock *c);
+
 /**
  * Appends the active time zone TLVs to a given message.
  * @param c          The clock instance.

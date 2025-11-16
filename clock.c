@@ -174,6 +174,11 @@ static int clock_resize_pollfd(struct clock *c, int new_nports);
 static void clock_remove_port(struct clock *c, struct port *p);
 static void clock_stats_display(struct clock_stats *s);
 
+
+int64_t get_master_offset(struct clock *c)
+{
+	return tmv_to_nanoseconds(c->master_offset);
+}
 static int clock_alttime_offset_append(struct clock *c, int key, struct ptp_message *m)
 {
 	struct alternate_time_offset_indicator_tlv *atoi;

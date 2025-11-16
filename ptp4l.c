@@ -57,6 +57,28 @@ static void timeguard_init(void)
 	}
 }
 
+int count_digits_int64(int64_t x)
+{
+    if (x < 0)
+        x = -x;
+
+    int digits = 1;
+    while (x >= 10) {
+        x /= 10;
+        digits++;
+    }
+    return digits;
+}
+
+
+uint64_t scale_from_digits(int digits)
+{
+    uint64_t scale = 1;
+    while (digits-- > 0)
+        scale *= 10;
+    return scale;
+}
+
 static int64_t phc_get_time_ns(const char *ptp_path)
 {
     int fd = open(ptp_path, O_RDONLY);
@@ -77,10 +99,29 @@ static int64_t phc_get_time_ns(const char *ptp_path)
 }
 
 
-static void timeguard_policy_c_step(void)
+static void phc_adjust(const char *ptp_path, struct timex *time)
+{
+    int fd = open(ptp_path, O_RDWR);
+//    if (fd < 0)
+//        return 0;   // or any sentinel you want
+
+    clockid_t clkid = FD_TO_CLOCKID(fd);
+      
+    // struct timespec ts;
+    if (clock_adjtime(clkid, (struct timex*)time) < 0) {
+        pr_notice("Correction step failed");
+       // close(fd);
+    }
+    close(fd);
+
+    // return (int64_t)ts.tv_sec * 1000000000LL + (int64_t)ts.tv_nsec;
+}
+
+
+static void timeguard_policy_c_step(struct clock *c)
 {
      int m = 1;
-     int n = 5;
+     int n = 1;
      int64_t tS = 1000000000LL; // placeholder
 
      int64_t p = (m * tS) / n;
@@ -103,34 +144,70 @@ static void timeguard_policy_c_step(void)
 
     struct tg_watchdog_error_out err_out;
     bool trusted = tg_watchdog_error(phc_ns, &err_out);
-    pr_notice("err_out: sec=%ld  ns=%ld\n",
-          (long)err_out.seconds,
-          (long)err_out.nanoseconds);
-    pr_notice("trusted: %s\n", trusted ? "true" : "false");
-    if(!trusted) {
-			struct timex tx_step;
-			memset(&tx_step, 0, sizeof(tx_step));
+    // pr_notice("master: sec=%ld  secure=%ld\n",(long)get_master_offset(c), (long)err_out.nanoseconds);
+    // pr_notice("trusted: %s\n", trusted ? "true" : "false");
+	if (!trusted) {
+    /* --- Combine TimeGuard error --- */
+    int64_t err_ns =
+        (int64_t)err_out.seconds * 1000000000LL +
+        (int64_t)err_out.nanoseconds;
 
-			tx_step.modes = ADJ_SETOFFSET | ADJ_NANO;
+    int64_t master_ns = get_master_offset(c);  /* in ns, from ptp servo */
 
-			/* Relative step of +10   s. In ADJ_NANO, tv_usec is nanoseconds. */
-			tx_step.time.tv_sec  = err_out.seconds;
-			tx_step.time.tv_usec = err_out.nanoseconds;   /* 10   s = 10,000 ns */
+    /* --- Digit scaling --- */
+    int64_t abs_err    = (err_ns >= 0)    ? err_ns    : -err_ns;
+    int64_t abs_master = (master_ns >= 0) ? master_ns : -master_ns;
 
-			if (tx_step.time.tv_usec < 0) {
-							tx_step.time.tv_sec  -= 1;
-							tx_step.time.tv_usec += 1000000000L;
-			}
-      int fd = open("/dev/ptp0", O_RDONLY);
-      if (fd < 0)
-        return;   // or any sentinel you want
+    if (abs_err == 0)    abs_err = 1;
+    if (abs_master == 0) abs_master = 1;
 
-      clockid_t clkid = FD_TO_CLOCKID(fd);
+    int digits_err    = count_digits_int64(abs_err);
+    int digits_master = count_digits_int64(abs_master);
 
-       if (clock_adjtime(clkid, &tx_step) < 0) {
-              pr_notice("Correction step failed");
-      }
-		}
+    int diff = digits_err - digits_master;
+
+    int64_t scale = (diff > 0) ? scale_from_digits(diff) : 1;
+    int64_t scaled_err_ns = err_ns / scale;
+
+    /* --- Max-step arrangement --- */
+    #define GLOBAL_MAX_STEP_NS  (10 * 1000000LL)   /* 10 ms cap */
+
+    int64_t max_from_master = abs_master;
+    if (max_from_master < GLOBAL_MAX_STEP_NS)
+        max_from_master = GLOBAL_MAX_STEP_NS;
+
+    int64_t max_step_ns = max_from_master;
+    if (max_step_ns > GLOBAL_MAX_STEP_NS)
+        max_step_ns = GLOBAL_MAX_STEP_NS;
+
+    /* clamp scaled correction */
+    if (scaled_err_ns > max_step_ns)
+        scaled_err_ns = max_step_ns;
+    else if (scaled_err_ns < -max_step_ns)
+        scaled_err_ns = -max_step_ns;
+
+    /* --- Convert final ns correction to timex --- */
+    struct timex tx_step;
+    memset(&tx_step, 0, sizeof(tx_step));
+
+    tx_step.modes = ADJ_SETOFFSET | ADJ_NANO;
+
+    int64_t sec  = scaled_err_ns / 1000000000LL;
+    int64_t nsec = scaled_err_ns % 1000000000LL;
+
+    if (nsec < 0) {
+        sec  -= 1;
+        nsec += 1000000000LL;
+    }
+
+    tx_step.time.tv_sec  = (long)sec;
+    tx_step.time.tv_usec = (long)nsec;   /* ADJ_NANO → tv_usec is ns */
+
+    phc_adjust("/dev/ptp0", &tx_step);
+   
+}
+
+    	
     int r2 = rand() % 11;
     next_inspect_time = now_ns + r2 * slot;
 }
@@ -366,7 +443,7 @@ int main(int argc, char *argv[])
         tg_set_baseline_time(sec, nsec);
 	//struct timespec last_adj = {0};	        
 	while (is_running()) {
-             timeguard_policy_c_step();
+             timeguard_policy_c_step(clock);
 
              //   struct timespec now;
     	     //   clock_gettime(CLOCK_MONOTONIC, &now);
@@ -377,14 +454,14 @@ int main(int argc, char *argv[])
 	     //   }
                 if (clock_poll(clock))
 			break;	
-	//	timeguard_policy_c_step();
+	//	timeguard_policy_c_step(clock);
                
 	}
 out:
 	if (clock)
 		clock_destroy(clock);
 	sad_destroy(cfg);
-	TA_CloseSessionEntryPoint();
+	// TA_CloseSessionEntryPoint();
         config_destroy(cfg);
 	return err;
 }
