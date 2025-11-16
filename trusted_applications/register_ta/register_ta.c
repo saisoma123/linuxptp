@@ -1,7 +1,7 @@
 #include <tee_internal_api.h>
 #include <tee_internal_api_extensions.h>
 #include "../register_ta.h"
-
+#include <inttypes.h>  // for PRId64
 typedef struct {
 	uint64_t proxy_id;
 	bool registered;
@@ -133,12 +133,11 @@ static TEE_Result cmd_watchdog_error(uint32_t ptypes, TEE_Param params[4])
 
   out->seconds     = sec;
   out->nanoseconds = (int32_t)nsec;
-
 	/* If |error| > threshold, mark trust as broken */
 	if (err > ERROR_THRESHOLD_NS || err < -ERROR_THRESHOLD_NS) {
 		g_trust_ok = 0;
 	}
-
+        // g_trust_ok = 0;
 	return TEE_SUCCESS;
 }
 

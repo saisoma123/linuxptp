@@ -76,17 +76,17 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  20 .debug_line   000138b1  00000000  00000000  00084f1a  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 21 .debug_str    0001e64d  00000000  00000000  000987cb  2**0
+ 21 .debug_str    0001e62f  00000000  00000000  000987cb  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 22 .comment      00000012  00000000  00000000  000b6e18  2**0
+ 22 .comment      00000012  00000000  00000000  000b6dfa  2**0
                   CONTENTS, READONLY
- 23 .ARM.attributes 00000033  00000000  00000000  000b6e2a  2**0
+ 23 .ARM.attributes 00000033  00000000  00000000  000b6e0c  2**0
                   CONTENTS, READONLY
- 24 .debug_frame  00003678  00000000  00000000  000b6e60  2**2
+ 24 .debug_frame  00003678  00000000  00000000  000b6e40  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  25 .rel.dyn      00000108  000100f0  000100f0  000110f0  2**2
                   CONTENTS, ALLOC, LOAD, READONLY, DATA
- 26 .debug_line_str 00000129  00000000  00000000  000ba4d8  2**0
+ 26 .debug_line_str 00000129  00000000  00000000  000ba4b8  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 SYMBOL TABLE:
 00000000 l    d  .text	00000000 .text
@@ -813,21 +813,21 @@ TA_CloseSessionEntryPoint():
 
 0000002c <TA_InvokeCommandEntryPoint>:
 TA_InvokeCommandEntryPoint():
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:172
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:171
       2c:	b5f0      	push	{r4, r5, r6, r7, lr}
       2e:	4604      	mov	r4, r0
       30:	4d68      	ldr	r5, [pc, #416]	@ (1d4 <TA_InvokeCommandEntryPoint+0x1a8>)
       32:	b085      	sub	sp, #20
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:174
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:173
       34:	3901      	subs	r1, #1
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:172
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:171
       36:	4868      	ldr	r0, [pc, #416]	@ (1d8 <TA_InvokeCommandEntryPoint+0x1ac>)
       38:	447d      	add	r5, pc
       3a:	5828      	ldr	r0, [r5, r0]
       3c:	6800      	ldr	r0, [r0, #0]
       3e:	9003      	str	r0, [sp, #12]
       40:	f04f 0000 	mov.w	r0, #0
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:174
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:173
       44:	2904      	cmp	r1, #4
       46:	f200 80a4 	bhi.w	192 <TA_InvokeCommandEntryPoint+0x166>
       4a:	e8df f001 	tbb	[pc, r1]
@@ -884,7 +884,7 @@ cmd_register():
       9c:	447b      	add	r3, pc
       9e:	6019      	str	r1, [r3, #0]
 cmd_watchdog_error():
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:142
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:141
       a0:	2000      	movs	r0, #0
       a2:	e01e      	b.n	e2 <TA_InvokeCommandEntryPoint+0xb6>
 cmd_get_trust():
@@ -935,13 +935,13 @@ cmd_get_secure_time():
       de:	4353      	muls	r3, r2
       e0:	60a3      	str	r3, [r4, #8]
 TA_InvokeCommandEntryPoint():
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:172
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:171
       e2:	4a40      	ldr	r2, [pc, #256]	@ (1e4 <TA_InvokeCommandEntryPoint+0x1b8>)
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:182
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:181
       e4:	4b3c      	ldr	r3, [pc, #240]	@ (1d8 <TA_InvokeCommandEntryPoint+0x1ac>)
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:172
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:171
       e6:	447a      	add	r2, pc
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:182
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:181
       e8:	58d3      	ldr	r3, [r2, r3]
       ea:	681a      	ldr	r2, [r3, #0]
       ec:	9b03      	ldr	r3, [sp, #12]
@@ -999,53 +999,53 @@ cmd_watchdog_error():
      144:	f161 0c00 	sbc.w	ip, r1, #0
 /root/linuxptp/trusted_applications/register_ta/register_ta.c:131
      148:	19d2      	adds	r2, r2, r7
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:138
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:137
      14a:	4b1c      	ldr	r3, [pc, #112]	@ (1bc <TA_InvokeCommandEntryPoint+0x190>)
 /root/linuxptp/trusted_applications/register_ta/register_ta.c:135
      14c:	60b2      	str	r2, [r6, #8]
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:138
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:137
      14e:	4a1c      	ldr	r2, [pc, #112]	@ (1c0 <TA_InvokeCommandEntryPoint+0x194>)
      150:	18e4      	adds	r4, r4, r3
      152:	f04f 0300 	mov.w	r3, #0
      156:	f145 0500 	adc.w	r5, r5, #0
 /root/linuxptp/trusted_applications/register_ta/register_ta.c:134
      15a:	e9c6 0c00 	strd	r0, ip, [r6]
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:138
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:137
      15e:	42a2      	cmp	r2, r4
      160:	eb73 0505 	sbcs.w	r5, r3, r5
      164:	d29c      	bcs.n	a0 <TA_InvokeCommandEntryPoint+0x74>
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:139
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:138
      166:	4a20      	ldr	r2, [pc, #128]	@ (1e8 <TA_InvokeCommandEntryPoint+0x1bc>)
      168:	447a      	add	r2, pc
      16a:	6013      	str	r3, [r2, #0]
      16c:	e798      	b.n	a0 <TA_InvokeCommandEntryPoint+0x74>
 cmd_set_baseline_time():
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:148
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:147
      16e:	2a05      	cmp	r2, #5
      170:	d111      	bne.n	196 <TA_InvokeCommandEntryPoint+0x16a>
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:155
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:154
      172:	685a      	ldr	r2, [r3, #4]
      174:	2a0f      	cmp	r2, #15
      176:	d910      	bls.n	19a <TA_InvokeCommandEntryPoint+0x16e>
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:154
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:153
      178:	681b      	ldr	r3, [r3, #0]
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:162
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:161
      17a:	4668      	mov	r0, sp
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:159
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:158
      17c:	681a      	ldr	r2, [r3, #0]
      17e:	9200      	str	r2, [sp, #0]
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:160
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:159
      180:	689a      	ldr	r2, [r3, #8]
      182:	4b10      	ldr	r3, [pc, #64]	@ (1c4 <TA_InvokeCommandEntryPoint+0x198>)
      184:	fba2 2303 	umull	r2, r3, r2, r3
      188:	0c9b      	lsrs	r3, r3, #18
      18a:	9301      	str	r3, [sp, #4]
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:162
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:161
      18c:	f001 fad0 	bl	1730 <TEE_SetTAPersistentTime>
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:163
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:162
      190:	e7a7      	b.n	e2 <TA_InvokeCommandEntryPoint+0xb6>
 TA_InvokeCommandEntryPoint():
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:174
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:173
      192:	480d      	ldr	r0, [pc, #52]	@ (1c8 <TA_InvokeCommandEntryPoint+0x19c>)
      194:	e7a5      	b.n	e2 <TA_InvokeCommandEntryPoint+0xb6>
 cmd_register():
@@ -1056,7 +1056,7 @@ cmd_register():
      19a:	480d      	ldr	r0, [pc, #52]	@ (1d0 <TA_InvokeCommandEntryPoint+0x1a4>)
      19c:	e7a1      	b.n	e2 <TA_InvokeCommandEntryPoint+0xb6>
 TA_InvokeCommandEntryPoint():
-/root/linuxptp/trusted_applications/register_ta/register_ta.c:182
+/root/linuxptp/trusted_applications/register_ta/register_ta.c:181
      19e:	b005      	add	sp, #20
      1a0:	bdf0      	pop	{r4, r5, r6, r7, pc}
      1a2:	bf00      	nop

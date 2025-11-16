@@ -44,7 +44,7 @@
 #include <linux/ptp_clock.h>
 
 #define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
-static clockid_t id;
+
 static void timeguard_init(void)
 {
 	uint8_t dev_secret[32] = {0}; 
@@ -80,8 +80,8 @@ static int64_t phc_get_time_ns(const char *ptp_path)
 static void timeguard_policy_c_step(void)
 {
      int m = 1;
-     int n = 1;
-     int64_t tS = 10000000LL; // placeholder
+     int n = 5;
+     int64_t tS = 1000000000LL; // placeholder
 
      int64_t p = (m * tS) / n;
      int64_t slot = p / 10;
@@ -103,7 +103,10 @@ static void timeguard_policy_c_step(void)
 
     struct tg_watchdog_error_out err_out;
     bool trusted = tg_watchdog_error(phc_ns, &err_out);
-    // pr_notice("trusted: %s\n", trusted ? "true" : "false");
+    pr_notice("err_out: sec=%ld  ns=%ld\n",
+          (long)err_out.seconds,
+          (long)err_out.nanoseconds);
+    pr_notice("trusted: %s\n", trusted ? "true" : "false");
     if(!trusted) {
 			struct timex tx_step;
 			memset(&tx_step, 0, sizeof(tx_step));
@@ -118,7 +121,13 @@ static void timeguard_policy_c_step(void)
 							tx_step.time.tv_sec  -= 1;
 							tx_step.time.tv_usec += 1000000000L;
 			}
-      if (clock_adjtime(id, &tx_step) < 0) {
+      int fd = open("/dev/ptp0", O_RDONLY);
+      if (fd < 0)
+        return;   // or any sentinel you want
+
+      clockid_t clkid = FD_TO_CLOCKID(fd);
+
+       if (clock_adjtime(clkid, &tx_step) < 0) {
               pr_notice("Correction step failed");
       }
 		}
@@ -375,6 +384,7 @@ out:
 	if (clock)
 		clock_destroy(clock);
 	sad_destroy(cfg);
-	config_destroy(cfg);
+	TA_CloseSessionEntryPoint();
+        config_destroy(cfg);
 	return err;
 }

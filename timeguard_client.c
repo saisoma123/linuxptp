@@ -88,7 +88,8 @@ bool tg_watchdog_error(int64_t err_ns, struct tg_watchdog_error_out *out_err)
         return false;
 
     uint8_t trust_ok;
-    return tg_get_trust(&trust_ok) && trust_ok == 1;
+    tg_get_trust(&trust_ok);
+    return trust_ok;
 }
 
 bool tg_set_baseline_time(uint64_t sec, uint32_t nsec)
