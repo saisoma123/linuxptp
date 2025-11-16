@@ -307,6 +307,7 @@ int main(int argc, char *argv[])
 	}
 
 	err = 0;
+        /*
         int fd = open("/dev/ptp0", O_RDWR);
         if (fd < 0) {
                 perror("open /dev/ptp0");
@@ -322,25 +323,25 @@ int main(int argc, char *argv[])
 
         int sync_sock = -1;
 
-        /* open UDP listener on first port's interface */
+        
         sync_sock = open_sync_socket("eth0");   // or "eth1", whatever you use
         if (sync_sock < 0)
                 pr_notice("failed to open sync listener on eth0\n");
         static int have_sync = 0;
         static struct timespec last_adj = {0};
-
+        */
 
         while (is_running()) {
 
         /* --- 1) Check for first Sync packet (non-blocking) --- */
-                if (!have_sync && sync_sock >= 0) {
-                        unsigned char buf[256];
-                        ssize_t n = recv(sync_sock, buf, sizeof(buf), 0);  // non-blocking
+       //         if (!have_sync && sync_sock >= 0) {
+       //                 unsigned char buf[256];
+       //                 ssize_t n = recv(sync_sock, buf, sizeof(buf), 0);  // non-blocking
 
-                        if (n > 0 && n >= 34) {
-                                unsigned char mt = buf[0] & 0x0F;  // messageType (low 4 bit>
-                                if (mt == 0) {  // Sync message
-                                        have_sync = 1;
+       //                 if (n > 0 && n >= 34) {
+       //                         unsigned char mt = buf[0] & 0x0F;  // messageType (low 4 bit>
+       //                         if (mt == 0) {  // Sync message
+       //                                 have_sync = 1;
 
                                 /* optional: do first injection immediately */
                          //       if (clock_adjtime(clkid, &tx) < 0) {
@@ -349,15 +350,15 @@ int main(int argc, char *argv[])
 
 
                         /* start 1-second timer from now */
-                                clock_gettime(CLOCK_MONOTONIC, &last_adj);
-                           }
-                        }
-                }
+//                                clock_gettime(CLOCK_MONOTONIC, &last_adj);
+ //                          }
+//                        }
+//                }
 
         /* --- 2) Once Sync seen, inject once per second --- */
-                if (have_sync) {
-                        struct timespec now;
-                        clock_gettime(CLOCK_MONOTONIC, &now);
+  //              if (have_sync) {
+  //                      struct timespec now;
+  //                      clock_gettime(CLOCK_MONOTONIC, &now);
 
                         //if (now.tv_sec != last_adj.tv_sec) {
                                // last_adj = now;
@@ -366,7 +367,7 @@ int main(int argc, char *argv[])
                                //         pr_notice("failed to step clock (+10us): %m\n");
                                // }
                        // }
-                }
+           //     }
 
         /* --- 3) Keep existing ptp loop logic --- */
         if (clock_poll(clock))
