@@ -33,7 +33,6 @@ static int realtime_leap_bit;
 static long realtime_hz;
 static long realtime_nominal_tick;
 
-static long int global_freq = 1000;
 void clockadj_init(clockid_t clkid)
 {
 #ifdef _SC_CLK_TCK
@@ -60,9 +59,9 @@ int clockadj_set_freq(clockid_t clkid, double freq)
 		tx.tick = round(freq / 1e3 / realtime_hz) + realtime_nominal_tick;
 		freq -= 1e3 * realtime_hz * (tx.tick - realtime_nominal_tick);
 	}
-        global_freq *= 1.04;
+
 	tx.modes |= ADJ_FREQUENCY;
-	tx.freq = (long) ((freq + global_freq) * 65.536); // this adds a progressive skew of 0.05 microseconds per second
+	tx.freq = (long) (freq * 65.536);
 	if (clock_adjtime(clkid, &tx) < 0) {
 		pr_err("failed to adjust the clock: %m");
 		return -1;
