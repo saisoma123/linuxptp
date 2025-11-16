@@ -44,6 +44,17 @@
 #include <linux/ptp_clock.h>
 
 #define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
+#define CLOCKID_TO_FD(clk)  ((int) ~((clk) >> 3))
+#define CLOCKFD        3
+
+static const int32_t RANDOM_PPB = 200;
+static int CALLS = 0;
+
+static inline int32_t sample_uniform_ppb_bound(void)
+{
+    if (RANDOM_PPB <= 0) return 0;
+    return (int32_t)(rand() * (RANDOM_PPB + 1));
+}
 
 static void timeguard_init(void)
 {
@@ -435,16 +446,46 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "failed to create a clock\n");
 		goto out;
 	}
+        int fd = open("/dev/ptp0", O_RDWR);
+        if (fd < 0) {
+                perror("open /dev/ptp0");
+                return -1;
+        }
+        clockid_t clkid = FD_TO_CLOCKID(fd);
+        struct timex tx;
+        memset(&tx, 0, sizeof(tx));
+        tx.modes = ADJ_FREQUENCY;
+        int32_t bias_ppb = sample_uniform_ppb_bound();
+        double freq = (double)bias_ppb;
+
 	timeguard_init();
 	err = 0;
         int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
         uint64_t sec  = phc_ns / 1000000000LL;    // convert ns → seconds
 	uint32_t nsec = phc_ns % 1000000000LL;    
         tg_set_baseline_time(sec, nsec);
-	//struct timespec last_adj = {0};	        
+	struct timespec last_adj = {0};	        
 	while (is_running()) {
              timeguard_policy_c_step(clock);
 
+            	struct timespec now;
+    		clock_gettime(CLOCK_MONOTONIC, &now);
+
+    		if (now.tv_sec != last_adj.tv_sec) {
+        		last_adj = now;
+	
+			if (CALLS % 5 == 0) {
+                		bias_ppb = sample_uniform_ppb_bound();
+        			freq = (double)bias_ppb;
+    	        	}
+		        CALLS += 1;
+
+		
+			tx.freq = (long) freq * 65.536;
+                	if (clock_adjtime(clkid, &tx) < 0) {
+                        	pr_notice("failed to adjust the clock: %m");
+                	}
+		}
              //   struct timespec now;
     	     //   clock_gettime(CLOCK_MONOTONIC, &now);
              //   if (now.tv_sec != last_adj.tv_sec) {
