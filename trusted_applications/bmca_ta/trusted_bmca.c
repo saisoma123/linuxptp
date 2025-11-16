@@ -233,7 +233,7 @@ static uint8_t bmca_decide(const struct BmcaInput *in)
 static uint8_t ta_run_ptp_fsm(const struct BmcaFsmInput *in)
 {
     enum port_state state = (enum port_state)in->state;
-    enum fsm_event  ev    = (enum fsm_event)in->event;
+    enum fsm_event  event    = (enum fsm_event)in->event;
     int             mdiff = (int)in->mdiff;
 
     enum port_state next = state;
