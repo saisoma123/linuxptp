@@ -101,7 +101,7 @@ static void timeguard_policy_c_step(void)
 
     int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
 
-		struct tg_watchdog_error_out err_out;
+    struct tg_watchdog_error_out err_out;
     bool trusted = tg_watchdog_error(phc_ns, &err_out);
     // pr_notice("trusted: %s\n", trusted ? "true" : "false");
     if(!trusted) {
@@ -355,8 +355,10 @@ int main(int argc, char *argv[])
         uint64_t sec  = phc_ns / 1000000000LL;    // convert ns → seconds
 	uint32_t nsec = phc_ns % 1000000000LL;    
         tg_set_baseline_time(sec, nsec);
-	struct timespec last_adj = {0};	        
+	//struct timespec last_adj = {0};	        
 	while (is_running()) {
+             timeguard_policy_c_step();
+
              //   struct timespec now;
     	     //   clock_gettime(CLOCK_MONOTONIC, &now);
              //   if (now.tv_sec != last_adj.tv_sec) {
@@ -365,16 +367,8 @@ int main(int argc, char *argv[])
              //   	tg_watchdog_sample_simple(123);
 	     //   }
                 if (clock_poll(clock))
-			break;
-                struct timespec now;
-                clock_gettime(CLOCK_MONOTONIC, &now);
-                if (now.tv_sec != last_adj.tv_sec) {
-                        last_adj = now;
-                        //int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-                        tg_watchdog_sample_simple(123);
-                }
-		
-		//timeguard_policy_c_step();
+			break;	
+	//	timeguard_policy_c_step();
                
 	}
 out:

@@ -9,7 +9,7 @@ typedef struct {
 
 static volatile uint32_t g_trust_ok = 1; // watchdog will update later
 
-static const int64_t ERROR_THRESHOLD_NS = 1000000000LL; // 1 second
+static const int64_t ERROR_THRESHOLD_NS = 462692; // 1 second
 
 static uint64_t rand_u64(void) {
 	uint64_t x = 0;
