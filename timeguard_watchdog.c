@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <linux/ptp_clock.h>
-
+#include "timeguard_watchdog.h"
 #define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
 
 
@@ -55,14 +55,15 @@ static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
 
 void tg_watchdog_sample_simple(int64_t phc_time_ns)
 {
+/*
     struct timespec t_0, t_1;
     clock_gettime(CLOCK_MONOTONIC, &t_0);
     int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
     clock_gettime(CLOCK_MONOTONIC, &t_1);
     uint64_t diff = (uint64_t)(t_1.tv_sec - t_0.tv_sec) * 1000000000ULL + (uint64_t)(t_1.tv_nsec - t_0.tv_nsec);
-     // sec  = phc_ns / 1000000000LL;    // convert ns  ^f^r seconds
-//      uint32_t nsec = phc_ns % 1000000000LL;
-//      tg_set_baseline_time(sec, nsec);
+      sec  = phc_ns / 1000000000LL;    // convert ns  ^f^r seconds
+      uint32_t nsec = phc_ns % 1000000000LL;
+      tg_set_baseline_time(sec, nsec);
 
     struct tg_time_out st = {0};
     struct timespec t0, t1;
@@ -75,8 +76,13 @@ void tg_watchdog_sample_simple(int64_t phc_time_ns)
     int64_t sec_ns = secure_time_to_ns(&st);
     clock_gettime(CLOCK_MONOTONIC, &t1);
     uint64_t dt_ns = 
-(uint64_t)(t1.tv_sec - t0.tv_sec) * 1000000000ULL + (uint64_t)(t1.tv_nsec - t0.tv_nsec);
-    int64_t err_ns = (phc_ns - diff) - (sec_ns - dt_ns);
+ (uint64_t)(t1.tv_sec - t0.tv_sec) * 1000000000ULL + (uint64_t)(t1.tv_nsec - t0.tv_nsec);
+*/ 
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+    struct tg_watchdog_error_out err_out;
+    bool trusted = tg_watchdog_error(phc_ns, &err_out);
+    int64_t err_ns = (int64_t)err_out.seconds * 1000000000LL + (int64_t)err_out.nanoseconds;
+   // int64_t err_ns = (phc_ns) - (sec_ns);
 
     g_sum_err_ns += err_ns;
     g_cnt++;

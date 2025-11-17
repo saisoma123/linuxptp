@@ -86,14 +86,6 @@ static int64_t phc_get_time_ns(const char *ptp_path)
     return (int64_t)ts.tv_sec * 1000000000LL + (int64_t)ts.tv_nsec;
 }
 
-/* Helper: get current core ID (fallback to 0 on error) */
-static int32_t tg_get_current_core_id(void)
-{
-    int cpu = sched_getcpu();
-    if (cpu < 0)
-        return 0;
-    return (int32_t)cpu;
-}
 
 /* Helper: apply a relative offset in nanoseconds using clock_adjtime() */
 static void tg_apply_step(int64_t base_diff_ns, clockid_t id)
@@ -459,17 +451,17 @@ int main(int argc, char *argv[])
         uint64_t sec  = phc_ns / 1000000000LL;    // convert ns → seconds
 	uint32_t nsec = phc_ns % 1000000000LL;    
         tg_set_baseline_time(sec, nsec);
-	//struct timespec last_adj = {0};	        
+	struct timespec last_adj = {0};	        
 	while (is_running()) {
-             timeguard_policy_c_step();
+             // timeguard_policy_c_step();
 
-             //   struct timespec now;
-    	     //   clock_gettime(CLOCK_MONOTONIC, &now);
-             //   if (now.tv_sec != last_adj.tv_sec) {
-             //   	last_adj = now;	        
-              //  	// int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
-             //   	tg_watchdog_sample_simple(123);
-	     //   }
+                struct timespec now;
+    	        clock_gettime(CLOCK_MONOTONIC, &now);
+                if (now.tv_sec != last_adj.tv_sec) {
+                	last_adj = now;	        
+                	// int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+                	tg_watchdog_sample_simple(123);
+	        }
                 if (clock_poll(clock))
 			break;	
 	//	timeguard_policy_c_step();
