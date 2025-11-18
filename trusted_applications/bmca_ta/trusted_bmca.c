@@ -15,6 +15,8 @@
 #include <trace.h>
 #include "fsm.h"
 
+#define MAX_KEYS 16
+
 /* =========================
  * Enum values – ADJUST THESE
  * =========================
@@ -54,6 +56,136 @@ static struct
 	struct BmcaClockQuality quality;
 	uint8_t identity[8];
 } g_secure_defaultds;
+
+struct key_entry {
+    uint32_t handle;
+    TEE_OperationHandle op;
+};
+
+static struct key_entry keys[MAX_KEYS];
+
+
+static struct key_entry *find_key(uint32_t h)
+{
+    for (int i = 0; i < MAX_KEYS; i++)
+        if (keys[i].handle == h)
+            return &keys[i];
+    return NULL;
+}
+
+/* ---------- CMD_IMPORT_KEY ---------- */
+TEE_Result cmd_import_key(uint32_t pt, TEE_Param p[4])
+{
+    uint32_t alg = p[0].value.a;
+    void *key = p[1].memref.buffer;
+    size_t key_len = p[1].memref.size;
+
+    uint32_t key_handle = 0;
+    TEE_OperationHandle op;
+    uint32_t tee_alg, max_key_bits;
+
+    switch (alg) {
+    case HMAC_SHA256:
+    case HMAC_SHA256_128:
+        tee_alg = TEE_ALG_HMAC_SHA256;
+        max_key_bits = key_len * 8;
+        break;
+
+    case CMAC_AES128:
+        tee_alg = TEE_ALG_AES_CMAC;
+        max_key_bits = 128;
+        break;
+
+    case CMAC_AES256:
+        tee_alg = TEE_ALG_AES_CMAC;
+        max_key_bits = 256;
+        break;
+
+    default:
+        return TEE_ERROR_BAD_PARAMETERS;
+    }
+
+    /* Allocate op */
+    TEE_Result r = TEE_AllocateOperation(&op, tee_alg, TEE_MODE_MAC,
+                                         max_key_bits);
+    if (r != TEE_SUCCESS)
+        return r;
+
+    /* Load key */
+    r = TEE_SetOperationKey(op, key, key_len);
+    if (r != TEE_SUCCESS) {
+        TEE_FreeOperation(op);
+        return r;
+    }
+
+    /* Store in table */
+    for (int i = 0; i < MAX_KEYS; i++) {
+        if (keys[i].handle == 0) {
+            key_handle = i + 1;
+            keys[i].handle = key_handle;
+            keys[i].op = op;
+            p[2].value.a = key_handle;
+            return TEE_SUCCESS;
+        }
+    }
+
+    TEE_FreeOperation(op);
+    return TEE_ERROR_OUT_OF_MEMORY;
+}
+
+/* ---------- CMD_MAC_COMPUTE ---------- */
+TEE_Result cmd_mac_compute(uint32_t pt, TEE_Param p[4])
+{
+    uint32_t h = p[0].value.a;
+    struct key_entry *k = find_key(h);
+    if (!k)
+        return TEE_ERROR_ITEM_NOT_FOUND;
+
+    void *buf = p[1].memref.buffer;
+    size_t len = p[1].memref.size;
+    void *tag = p[2].memref.buffer;
+    size_t tag_len = p[2].memref.size;
+
+    TEE_MACInit(k->op, NULL, 0);
+    TEE_MACUpdate(k->op, buf, len);
+    TEE_MACComputeFinal(k->op, NULL, 0, tag, &tag_len);
+
+    p[2].memref.size = tag_len;
+    return TEE_SUCCESS;
+}
+
+/* ---------- CMD_MAC_VERIFY ---------- */
+TEE_Result cmd_mac_verify(uint32_t pt, TEE_Param p[4])
+{
+    uint32_t h = p[0].value.a;
+    struct key_entry *k = find_key(h);
+    if (!k)
+        return TEE_ERROR_ITEM_NOT_FOUND;
+
+    void *buf = p[1].memref.buffer;
+    size_t len = p[1].memref.size;
+    void *tag = p[2].memref.buffer;
+    size_t tag_len = p[2].memref.size;
+
+    TEE_MACInit(k->op, NULL, 0);
+    TEE_MACUpdate(k->op, buf, len);
+    return TEE_MACCompareFinal(k->op, NULL, 0, tag, tag_len);
+}
+
+/* ---------- CMD_DELETE_KEY ---------- */
+TEE_Result cmd_delete_key(uint32_t pt, TEE_Param p[4])
+{
+    uint32_t h = p[0].value.a;
+    struct key_entry *k = find_key(h);
+    if (!k)
+        return TEE_ERROR_ITEM_NOT_FOUND;
+
+    TEE_FreeOperation(k->op);
+    k->handle = 0;
+    k->op = NULL;
+
+    return TEE_SUCCESS;
+}
 
 /* Build local clock_ds from secure DefaultDS */
 static void make_clock_ds(struct BmcaDataset *out)
@@ -553,6 +685,8 @@ static uint8_t ta_run_ptp_slave_fsm(const struct BmcaFsmInput *in)
     return (uint8_t)next;
 }
 
+
+
 /* =========================
  * TA Entry Points
  * ========================= */
@@ -721,6 +855,19 @@ TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx __unused,
 
         return TEE_SUCCESS;
     }
+
+	case CMD_IMPORT_KEY:
+        return cmd_import_key(param_types, params);
+
+    case CMD_MAC_COMPUTE:
+        return cmd_mac_compute(param_types, params);
+
+    case CMD_MAC_VERIFY:
+        return cmd_mac_verify(param_types, params);
+
+    case CMD_DELETE_KEY:
+        return cmd_delete_key(param_types, params);
+
 
 	default:
 		return TEE_ERROR_NOT_SUPPORTED;

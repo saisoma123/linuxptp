@@ -25,6 +25,11 @@
 
 #define TA_BMCA_CMD_PTP_SLAVE_FSM   0x00000005
 
+#define CMD_IMPORT_KEY          0x0100
+#define CMD_MAC_COMPUTE         0x0101
+#define CMD_MAC_VERIFY          0x0102
+#define CMD_DELETE_KEY          0x0103
+
 
 /* -------- Wire structs (must match on host & TA) -------- */
 struct BmcaClockQuality

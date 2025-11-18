@@ -48,17 +48,14 @@ ifeq (,$(findstring -DUSE_OPENSSL, $(EXTRA_CFLAGS)))
 incdefs := $(filter-out -DHAVE_OPENSSL, $(incdefs))
 endif
 
-SECURITY := sad.o sad_openssl.o
-
-# 2) force-enable OpenSSL path in this tree
-EXTRA_CFLAGS += -DUSE_OPENSSL -DHAVE_OPENSSL
-
 # 3) make sure TEEC and OpenSSL libs are linked (order matters: after objects)
 CPPFLAGS += $(shell pkg-config --cflags libteec 2>/dev/null)
 LDLIBS   += $(shell pkg-config --libs   libteec 2>/dev/null || echo -lteec)
 # Prefer pkg-config openssl; fall back to libcrypto + dl
-LDLIBS   += $(shell pkg-config --libs openssl 2>/dev/null || echo "-lcrypto -ldl")
+SECURITY := sad.o sad_tee.o
 
+# Define symbol so SAD code picks OP-TEE backend
+EXTRA_CFLAGS += -DHAVE_OPTEE
 CFLAGS  += -Itrusted_applications
 
 LDFLAGS += -L/root/imx-optee-client/out/export/usr/lib
