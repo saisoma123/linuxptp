@@ -228,7 +228,7 @@ static TEE_Result tg_compute_base_diff(int64_t phc_ns,
         secure_adj -= 27435; // baseline passive mode overhead
     }
 
-    *out_diff_ns = (phc_ns - secure_adj) - PASSIVE_ERROR;
+    *out_diff_ns = (phc_ns - secure_adj);
     return TEE_SUCCESS;
 }
 
@@ -417,10 +417,11 @@ static TEE_Result cmd_passive_schedtrace(uint32_t ptypes, TEE_Param params[4])
     out->base_diff_ns = base_diff_ns;
 
     /* update sliding window trace */
-    schedtrace_update(actual_core);
+    // schedtrace_update(actual_core);
 
     return TEE_SUCCESS;
 }
+
 
 
 
