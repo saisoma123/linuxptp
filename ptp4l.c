@@ -46,6 +46,7 @@
 #define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
 #define CLOCKID_TO_FD(clk)  ((int) ~((clk) >> 3))
 #define CLOCKFD        3
+static const int64_t ERROR = 483302;
 
 static const int32_t RANDOM_PPB = 200;
 static int CALLS = 0;
@@ -157,11 +158,13 @@ static void timeguard_policy_c_step(struct clock *c)
     bool trusted = tg_watchdog_error(phc_ns, &err_out);
     // pr_notice("master: sec=%ld  secure=%ld\n",(long)get_master_offset(c), (long)err_out.nanoseconds);
     // pr_notice("trusted: %s\n", trusted ? "true" : "false");
-	if (!trusted) {
-    /* --- Combine TimeGuard error --- */
     int64_t err_ns =
-        (int64_t)err_out.seconds * 1000000000LL +
-        (int64_t)err_out.nanoseconds;
+            (int64_t)err_out.seconds * 1000000000LL +
+            (int64_t)err_out.nanoseconds;
+
+    if (err_ns > ERROR || err_ns < -ERROR) {
+        /* --- Combine TimeGuard error --- */
+        err_ns -= ERROR;
 
     int64_t master_ns = get_master_offset(c);  /* in ns, from ptp servo */
 
@@ -250,11 +253,14 @@ static void timeguard_policy_a_step(struct clock *c)
     // pr_notice("master: sec=%ld  secure=%ld\n",(long)get_master_offset(c), (long)err_out.nanoseconds);
     // pr_notice("trusted: %s\n", trusted ? "true" : "false");
 
-    if (!trusted) {
-        /* --- Combine TimeGuard error --- */
-        int64_t err_ns =
+    
+    int64_t err_ns =
             (int64_t)err_out.seconds * 1000000000LL +
             (int64_t)err_out.nanoseconds;
+
+    if (err_ns > ERROR || err_ns < -ERROR) {
+        /* --- Combine TimeGuard error --- */
+        err_ns -= ERROR;
 
         int64_t master_ns = get_master_offset(c);  /* in ns, from ptp servo */
 
@@ -355,11 +361,14 @@ static void timeguard_policy_b_step(struct clock *c)
     // pr_notice("master: sec=%ld  secure=%ld\n",(long)get_master_offset(c), (long)err_out.nanoseconds);
     // pr_notice("trusted: %s\n", trusted ? "true" : "false");
 
-    if (!trusted) {
-        /* --- Combine TimeGuard error --- */
-        int64_t err_ns =
+    
+    int64_t err_ns =
             (int64_t)err_out.seconds * 1000000000LL +
             (int64_t)err_out.nanoseconds;
+
+    if (err_ns > ERROR || err_ns < -ERROR) {
+        /* --- Combine TimeGuard error --- */
+        err_ns -= ERROR;
 
         int64_t master_ns = get_master_offset(c);  /* in ns, from ptp servo */
 
