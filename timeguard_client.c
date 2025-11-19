@@ -47,4 +47,26 @@ bool tg_get_trust(uint8_t *trust_ok) {
 	return true;
 }
 
+bool tg_get_secure_time(struct tg_time_out *out_time)
+{
+	if (!out_time)
+		return false;
+
+	struct tg_time_out out = {0};
+	TEEC_Operation op = {0};
+
+	op.paramTypes = TEEC_PARAM_TYPES(TEEC_MEMREF_TEMP_OUTPUT,
+	                                 TEEC_NONE, TEEC_NONE, TEEC_NONE);
+	op.params[0].tmpref.buffer = &out;
+	op.params[0].tmpref.size   = sizeof(out);
+
+	TEEC_Result r = TEEC_InvokeCommand(&g_sess, TG_CMD_GET_SECURE_TIME,
+	                                   &op, NULL);
+	if (r)
+		return false;
+
+	*out_time = out;
+	return true;
+}
+
 uint64_t tg_proxy_id(void) { return g_proxy_id; }

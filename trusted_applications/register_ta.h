@@ -8,6 +8,8 @@
 enum {
 	TG_CMD_REGISTER   = 0x0001, // in: device_secret[32],  out: proxy_id (u64)
 	TG_CMD_GET_TRUST  = 0x0002  // out: trust_ok (0/1)
+	TG_CMD_GET_SECURE_TIME = 0x0003  // out: secure time
+	TG_CMD_WATCHDOG_CHECK  = 0x0004
 };
 
 struct tg_register_in {
@@ -21,4 +23,13 @@ struct tg_register_out {
 
 struct tg_trust_out {
 	uint32_t trust_ok;           // 0 or 1
+};
+
+struct tg_time_out {
+	uint64_t seconds;            // secure time seconds
+	uint32_t nanoseconds;        // secure time nanoseconds (0..1e9-1)
+};
+
+struct tg_watchdog_error_in {
+	int64_t err_ns;   // error = phc_time_ns - secure_time_ns (precomputed in normal world)
 };

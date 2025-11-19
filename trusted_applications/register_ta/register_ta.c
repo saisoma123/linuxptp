@@ -9,6 +9,8 @@ typedef struct {
 
 static volatile uint32_t g_trust_ok = 1; // watchdog will update later
 
+static const int64_t ERROR_THRESHOLD_NS = 1000000000LL; // 1 second
+
 static uint64_t rand_u64(void) {
 	uint64_t x = 0;
 	TEE_GenerateRandom(&x, sizeof(x));
@@ -67,12 +69,66 @@ static TEE_Result cmd_get_trust(uint32_t ptypes, TEE_Param params[4]) {
 	return TEE_SUCCESS;
 }
 
+static TEE_Result cmd_get_secure_time(uint32_t ptypes, TEE_Param params[4])
+{
+	if (TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_OUTPUT,
+	                    TEE_PARAM_TYPE_NONE,
+	                    TEE_PARAM_TYPE_NONE,
+	                    TEE_PARAM_TYPE_NONE) != ptypes)
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	struct tg_time_out *out = params[0].memref.buffer;
+	if (params[0].memref.size < sizeof(*out))
+		return TEE_ERROR_SHORT_BUFFER;
+
+	TEE_Time t;
+	TEE_Result r = TEE_GetSystemTime(&t);
+	if (r != TEE_SUCCESS)
+		return r;
+
+	out->seconds     = (uint64_t)t.seconds;
+	/* TEE_Time gives milliseconds; convert to nanoseconds */
+	out->nanoseconds = (uint32_t)t.millis * 1000000u;
+
+	return TEE_SUCCESS;
+}
+
+static TEE_Result cmd_watchdog_error(uint32_t ptypes, TEE_Param params[4])
+{
+	uint32_t exp_ptypes =
+		TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,
+		                TEE_PARAM_TYPE_NONE,
+		                TEE_PARAM_TYPE_NONE,
+		                TEE_PARAM_TYPE_NONE);
+
+	if (ptypes != exp_ptypes)
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	if (params[0].memref.size != sizeof(struct tg_watchdog_error_in))
+		return TEE_ERROR_BAD_PARAMETERS;
+
+	struct tg_watchdog_error_in *in =
+		(struct tg_watchdog_error_in *)params[0].memref.buffer;
+
+	int64_t err = in->err_ns;
+
+	/* If |error| > threshold, mark trust as broken */
+	if (err > ERROR_THRESHOLD_NS || err < -ERROR_THRESHOLD_NS) {
+		g_trust_ok = 0;
+	}
+
+	return TEE_SUCCESS;
+}
+
+
 TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx, uint32_t cmd_id,
                                       uint32_t ptypes, TEE_Param params[4]) {
 	sess_ctx_t *s = (sess_ctx_t *)sess_ctx;
 	switch (cmd_id) {
 	case TG_CMD_REGISTER:  return cmd_register(s, ptypes, params);
 	case TG_CMD_GET_TRUST: return cmd_get_trust(ptypes, params);
+	case TG_CMD_GET_SECURE_TIME: return cmd_get_secure_time(ptypes, params);
+	case TG_CMD_WATCHDOG_ERROR: return cmd_watchdog_error(ptypes, params);
 	default:               return TEE_ERROR_NOT_SUPPORTED;
 	}
 }
