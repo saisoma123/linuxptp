@@ -36,6 +36,84 @@
 #include "uds.h"
 #include "util.h"
 #include "version.h"
+#include "timeguard_client.h"
+#include "timeguard_watchdog.h"
+#include <time.h>
+#include <unistd.h>
+#include <fcntl.h>          
+#include <linux/ptp_clock.h>
+
+#define FD_TO_CLOCKID(fd)   ((clockid_t) ((~(fd) << 3) | 3))
+
+static void timeguard_init(void)
+{
+	uint8_t dev_secret[32] = {0}; 
+	// For bring-up you can leave zeros; TA currently accepts anything.
+	if (!tg_register(dev_secret)) {
+		pr_err("timeguard: register failed; continuing without watchdog\n");
+	} else {
+		pr_info("timeguard: registered, proxy_id=0x%016llx\n",
+		        (unsigned long long)tg_proxy_id());
+	}
+}
+
+static int64_t phc_get_time_ns(const char *ptp_path)
+{
+    int fd = open(ptp_path, O_RDONLY);
+    if (fd < 0)
+        return 0;   // or any sentinel you want
+
+    clockid_t clkid = FD_TO_CLOCKID(fd);
+
+    struct timespec ts;
+    if (clock_gettime(clkid, &ts) < 0) {
+        close(fd);
+        return 0;
+    }
+
+    close(fd);
+
+    return (int64_t)ts.tv_sec * 1000000000LL + (int64_t)ts.tv_nsec;
+}
+
+
+static void timeguard_policy_c_step(void)
+{
+     int m = 1;
+     int n = 1;
+     int64_t tS = 10000000LL; // placeholder
+
+     int64_t p = (m * tS) / n;
+     int64_t slot = p / 10;
+
+     struct timespec now;
+     clock_gettime(CLOCK_MONOTONIC, &now);
+     int64_t now_ns = now.tv_sec * 1000000000LL + now.tv_nsec;
+
+     static int64_t next_inspect_time = 0;
+     if (next_inspect_time == 0) {
+         int r = rand() % 11;
+         next_inspect_time = now_ns + r * slot;
+     }
+
+    if (now_ns < next_inspect_time)
+         return;
+
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+    int64_t err_ns = tg_get_instant_error(phc_ns);
+    bool trusted = tg_watchdog_error(err_ns);
+    pr_notice("trusted: %s\n", trusted ? "true" : "false");
+    
+    int r2 = rand() % 11;
+    next_inspect_time = now_ns + r2 * slot;
+}
+
+
+static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
+{
+    return (int64_t)t->seconds * 1000000000LL + (int64_t)t->nanoseconds;
+}
+
 
 static void usage(char *progname)
 {
@@ -253,12 +331,19 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "failed to create a clock\n");
 		goto out;
 	}
-
+	timeguard_init();
 	err = 0;
-
+        int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+        uint64_t sec  = phc_ns / 1000000000LL;    // convert ns → seconds
+	uint32_t nsec = phc_ns % 1000000000LL;    
+        tg_set_baseline_time(sec, nsec);
 	while (is_running()) {
 		if (clock_poll(clock))
 			break;
+		int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+		tg_watchdog_sample_simple(phc_ns);
+		timeguard_policy_c_step();
+                
 	}
 out:
 	if (clock)

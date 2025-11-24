@@ -1,5 +1,6 @@
 {
   "files.associations": {
-    "bmca_ta.h": "c"
+    "bmca_ta.h": "c",
+    "register_ta.h": "c"
   }
 }
