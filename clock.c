@@ -2755,11 +2755,13 @@ static void handle_state_decision_event(struct clock *c)
 
 	c->best = best;
 	c->best_id = best_id;
-
+    
+	/*
 	if (tee_bmca_ping())
 		pr_notice("TEE PING successful\n");
 	else
 		pr_notice("TEE PING failed\n");
+	*/
 
 	if (!tee_bmca_set_default_ds(c))
 		pr_notice("TEE provisioning of DefaultDS failed, continuing in REE mode\n");
@@ -2770,15 +2772,17 @@ static void handle_state_decision_event(struct clock *c)
 		enum fsm_event event;
 		if (!tee_bmc_state_decision(c, piter, &ps))
 		{
-			pr_notice("Hey the REE got executed instead Surya!");
+			// pr_notice("Hey the REE got executed instead Surya!");
 			ps = bmc_state_decision(c, piter, c->dscmp);
 		}
-		pr_notice("Hey the TEE got executed instead Surya!");
-		enum port_state host_ps = bmc_state_decision(c, piter, c->dscmp);
+		// pr_notice("Hey the TEE got executed instead Surya!");
+		// enum port_state host_ps = bmc_state_decision(c, piter, c->dscmp);
+		/*
 		if (host_ps != ps)
 		{
 			pr_notice("MISMATCH: HOST=%u TA=%u", host_ps, ps);
 		}
+		*/
 		switch (ps)
 		{
 		case PS_LISTENING:
