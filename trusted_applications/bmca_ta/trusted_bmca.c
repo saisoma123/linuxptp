@@ -835,16 +835,16 @@ TEE_Result TA_InvokeCommandEntryPoint(void *sess_ctx __unused,
 		IMSG("BMCA default ran");
 		return TEE_SUCCESS;
 	}
-
+    /*
 	case TA_BMCA_CMD_PING:
 	{
 		uint32_t exp = TEE_PARAM_TYPES(TEE_PARAM_TYPE_VALUE_OUTPUT, 0, 0, 0);
 		if (param_types != exp)
 			return TEE_ERROR_BAD_PARAMETERS;
-		params[0].value.a = 0xBAAA; /* magic */
+		params[0].value.a = 0xBAAA; 
 		return TEE_SUCCESS;
 	}
-
+    */
 	case TA_BMCA_CMD_PTP_FSM:
     {
         uint32_t exp = TEE_PARAM_TYPES(TEE_PARAM_TYPE_MEMREF_INPUT,

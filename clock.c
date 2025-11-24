@@ -2533,7 +2533,7 @@ static inline void copy_dataset(const struct dataset *src, struct BmcaDataset *d
 	memcpy(dst->receiver.clockIdentity, &src->receiver.clockIdentity, 8);
 	dst->receiver.portNumber = src->receiver.portNumber;
 }
-
+/*
 static int tee_bmca_ping(void)
 {
 	TEEC_Context ctx;
@@ -2543,7 +2543,7 @@ static int tee_bmca_ping(void)
 	TEEC_UUID uuid = TA_BMCA_UUID;
 	uint32_t err_origin = 0;
 
-	/* open context */
+	// open context 
 	res = TEEC_InitializeContext(NULL, &ctx);
 	if (res != TEEC_SUCCESS)
 	{
@@ -2551,7 +2551,7 @@ static int tee_bmca_ping(void)
 		return 0;
 	}
 
-	/* open session to our TA */
+	// open session to our TA 
 	res = TEEC_OpenSession(&ctx, &sess, &uuid, TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
 	if (res != TEEC_SUCCESS)
 	{
@@ -2560,7 +2560,7 @@ static int tee_bmca_ping(void)
 		return 0;
 	}
 
-	/* run the ping command */
+	// run the ping command 
 	op.paramTypes = TEEC_PARAM_TYPES(TEEC_VALUE_OUTPUT, 0, 0, 0);
 	res = TEEC_InvokeCommand(&sess, TA_BMCA_CMD_PING, &op, &err_origin);
 	if (res == TEEC_SUCCESS)
@@ -2573,7 +2573,7 @@ static int tee_bmca_ping(void)
 
 	return (res == TEEC_SUCCESS);
 }
-
+*/
 static int tee_bmca_set_default_ds(struct clock *c)
 {
 	TEEC_Context ctx;
