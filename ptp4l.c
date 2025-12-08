@@ -223,6 +223,207 @@ static void timeguard_policy_c_step(struct clock *c)
     next_inspect_time = now_ns + r2 * slot;
 }
 
+static void timeguard_policy_a_step(struct clock *c)
+{
+    int64_t tS = 1000000000LL; // scheduling period, e.g., 1s
+    int64_t p  = tS;           // watchdog period
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    int64_t now_ns = now.tv_sec * 1000000000LL + now.tv_nsec;
+
+    static int64_t next_inspect_time = 0;
+
+    /* First invocation: start inspecting immediately at period start */
+    if (next_inspect_time == 0)
+        next_inspect_time = now_ns;
+
+    if (now_ns < next_inspect_time)
+        return;
+
+    /* ===== Watchdog inspection body (same as Policy C) ===== */
+
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+
+    struct tg_watchdog_error_out err_out;
+    bool trusted = tg_watchdog_error(phc_ns, &err_out);
+    // pr_notice("master: sec=%ld  secure=%ld\n",(long)get_master_offset(c), (long)err_out.nanoseconds);
+    // pr_notice("trusted: %s\n", trusted ? "true" : "false");
+
+    if (!trusted) {
+        /* --- Combine TimeGuard error --- */
+        int64_t err_ns =
+            (int64_t)err_out.seconds * 1000000000LL +
+            (int64_t)err_out.nanoseconds;
+
+        int64_t master_ns = get_master_offset(c);  /* in ns, from ptp servo */
+
+        /* --- Digit scaling --- */
+        int64_t abs_err    = (err_ns >= 0)    ? err_ns    : -err_ns;
+        int64_t abs_master = (master_ns >= 0) ? master_ns : -master_ns;
+
+        if (abs_err == 0)    abs_err = 1;
+        if (abs_master == 0) abs_master = 1;
+
+        int digits_err    = count_digits_int64(abs_err);
+        int digits_master = count_digits_int64(abs_master);
+
+        int diff = digits_err - digits_master;
+
+        int64_t scale = (diff > 0) ? scale_from_digits(diff) : 1;
+        int64_t scaled_err_ns = err_ns / scale;
+
+        /* --- Max-step arrangement --- */
+        #define GLOBAL_MAX_STEP_NS  (10 * 1000000LL)   /* 10 ms cap */
+
+        int64_t max_from_master = abs_master;
+        if (max_from_master < GLOBAL_MAX_STEP_NS)
+            max_from_master = GLOBAL_MAX_STEP_NS;
+
+        int64_t max_step_ns = max_from_master;
+        if (max_step_ns > GLOBAL_MAX_STEP_NS)
+            max_step_ns = GLOBAL_MAX_STEP_NS;
+
+        /* clamp scaled correction */
+        if (scaled_err_ns > max_step_ns)
+            scaled_err_ns = max_step_ns;
+        else if (scaled_err_ns < -max_step_ns)
+            scaled_err_ns = -max_step_ns;
+
+        /* --- Convert final ns correction to timex --- */
+        struct timex tx_step;
+        memset(&tx_step, 0, sizeof(tx_step));
+
+        tx_step.modes = ADJ_SETOFFSET | ADJ_NANO;
+
+        int64_t sec  = scaled_err_ns / 1000000000LL;
+        int64_t nsec = scaled_err_ns % 1000000000LL;
+
+        if (nsec < 0) {
+            sec  -= 1;
+            nsec += 1000000000LL;
+        }
+
+        tx_step.time.tv_sec  = (long)sec;
+        tx_step.time.tv_usec = (long)nsec;   /* ADJ_NANO → tv_usec is ns */
+
+        phc_adjust("/dev/ptp0", &tx_step);
+    }
+
+    /* Next inspection exactly one period later */
+    next_inspect_time += p;
+}
+
+static void timeguard_policy_b_step(struct clock *c)
+{
+    int64_t tS   = 1000000000LL; // scheduling period, e.g., 1s
+    int64_t p    = tS;           // watchdog period
+    int64_t slot = p / 10;       // p/10 granularity
+
+    struct timespec now;
+    clock_gettime(CLOCK_MONOTONIC, &now);
+    int64_t now_ns = now.tv_sec * 1000000000LL + now.tv_nsec;
+
+    static int64_t period_start_ns   = 0;
+    static int64_t next_inspect_time = 0;
+
+    if (period_start_ns == 0) {
+        /* First call: define first period and pick a random offset */
+        period_start_ns = now_ns;
+        int r = rand() % 11;  // 0..10
+        next_inspect_time = period_start_ns + r * slot;
+    }
+
+    /* If we've advanced beyond the current period, roll periods forward
+     * and choose a new random inspection point for the current period.
+     */
+    while (now_ns >= period_start_ns + p) {
+        period_start_ns += p;
+        int r = rand() % 11;
+        next_inspect_time = period_start_ns + r * slot;
+    }
+
+    if (now_ns < next_inspect_time)
+        return;
+
+    /* ===== Watchdog inspection body (same as Policy C) ===== */
+
+    int64_t phc_ns = phc_get_time_ns("/dev/ptp0");
+
+    struct tg_watchdog_error_out err_out;
+    bool trusted = tg_watchdog_error(phc_ns, &err_out);
+    // pr_notice("master: sec=%ld  secure=%ld\n",(long)get_master_offset(c), (long)err_out.nanoseconds);
+    // pr_notice("trusted: %s\n", trusted ? "true" : "false");
+
+    if (!trusted) {
+        /* --- Combine TimeGuard error --- */
+        int64_t err_ns =
+            (int64_t)err_out.seconds * 1000000000LL +
+            (int64_t)err_out.nanoseconds;
+
+        int64_t master_ns = get_master_offset(c);  /* in ns, from ptp servo */
+
+        /* --- Digit scaling --- */
+        int64_t abs_err    = (err_ns >= 0)    ? err_ns    : -err_ns;
+        int64_t abs_master = (master_ns >= 0) ? master_ns : -master_ns;
+
+        if (abs_err == 0)    abs_err = 1;
+        if (abs_master == 0) abs_master = 1;
+
+        int digits_err    = count_digits_int64(abs_err);
+        int digits_master = count_digits_int64(abs_master);
+
+        int diff = digits_err - digits_master;
+
+        int64_t scale = (diff > 0) ? scale_from_digits(diff) : 1;
+        int64_t scaled_err_ns = err_ns / scale;
+
+        /* --- Max-step arrangement --- */
+        #define GLOBAL_MAX_STEP_NS  (10 * 1000000LL)   /* 10 ms cap */
+
+        int64_t max_from_master = abs_master;
+        if (max_from_master < GLOBAL_MAX_STEP_NS)
+            max_from_master = GLOBAL_MAX_STEP_NS;
+
+        int64_t max_step_ns = max_from_master;
+        if (max_step_ns > GLOBAL_MAX_STEP_NS)
+            max_step_ns = GLOBAL_MAX_STEP_NS;
+
+        /* clamp scaled correction */
+        if (scaled_err_ns > max_step_ns)
+            scaled_err_ns = max_step_ns;
+        else if (scaled_err_ns < -max_step_ns)
+            scaled_err_ns = -max_step_ns;
+
+        /* --- Convert final ns correction to timex --- */
+        struct timex tx_step;
+        memset(&tx_step, 0, sizeof(tx_step));
+
+        tx_step.modes = ADJ_SETOFFSET | ADJ_NANO;
+
+        int64_t sec  = scaled_err_ns / 1000000000LL;
+        int64_t nsec = scaled_err_ns % 1000000000LL;
+
+        if (nsec < 0) {
+            sec  -= 1;
+            nsec += 1000000000LL;
+        }
+
+        tx_step.time.tv_sec  = (long)sec;
+        tx_step.time.tv_usec = (long)nsec;   /* ADJ_NANO → tv_usec is ns */
+
+        phc_adjust("/dev/ptp0", &tx_step);
+    }
+
+    /* After inspecting in this period, advance to the next period and
+     * choose a new random slot i ∈ {0, p/10, …, p}.
+     */
+    period_start_ns += p;
+    int r2 = rand() % 11;
+    next_inspect_time = period_start_ns + r2 * slot;
+}
+
+
 
 static inline int64_t secure_time_to_ns(const struct tg_time_out *t)
 {
